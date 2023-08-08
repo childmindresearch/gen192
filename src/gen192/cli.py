@@ -10,7 +10,7 @@ from dataclasses import dataclass
 PIPELINE_NAMES = {
     'ABCD': 'cpac_abcd-options',
     'CCS': 'cpac_ccs-options',
-    'Default': 'cpac-default-pipeline',
+    'RBC': 'RBCv0',
     'fMRIPrep': 'cpac_fmriprep-options',
 }
 
