@@ -115,7 +115,7 @@ def multi_set(obj: dict, index: Sequence, value: Any) -> bool:
         if not isinstance(obj, dict):
             return False
 
-        if idx == len(index) - 2:
+        if idx == len(index) - 1:
             obj[i] = value
             return True
 
@@ -136,7 +136,7 @@ def multi_del(obj: dict, index: Sequence) -> Optional[Any]:
         if not isinstance(obj, dict):
             return None
 
-        if idx == len(index) - 2:
+        if idx == len(index) - 1:
             if i in obj:
                 val = obj[i]
                 del obj[i]
