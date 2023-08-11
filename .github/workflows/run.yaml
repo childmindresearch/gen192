@@ -30,4 +30,4 @@ jobs:
           name: "Development Build"
           tag_name: "dev"
           files: |
-            build/*.zip
+            dist/*.zip

@@ -95,7 +95,7 @@ class PipelineConfig:
 
 def multi_get(obj: dict, index: Iterable) -> Optional[Any]:
     """
-    Gets a value from a nested dictionary. 
+    Gets a value from a nested dictionary.
     Returns None if the path does not exist.
     """
     for i in index:
@@ -107,8 +107,8 @@ def multi_get(obj: dict, index: Iterable) -> Optional[Any]:
 
 def multi_set(obj: dict, index: Sequence, value: Any) -> bool:
     """
-    Sets a value in a nested dictionary. 
-    Returns True if the path exists or was able to be created 
+    Sets a value in a nested dictionary.
+    Returns True if the path exists or was able to be created
     and the value was set.
     """
     for idx, i in enumerate(index):
@@ -123,12 +123,13 @@ def multi_set(obj: dict, index: Sequence, value: Any) -> bool:
             obj[i] = {}
 
         obj = obj[i]
+    assert False
 
 
 def multi_del(obj: dict, index: Sequence) -> Optional[Any]:
     """
-    Deletes a value from a nested dictionary. 
-    Returns the value if the path exists and 
+    Deletes a value from a nested dictionary.
+    Returns the value if the path exists and
     the value was deleted.
     """
     for idx, i in enumerate(index):
@@ -146,20 +147,21 @@ def multi_del(obj: dict, index: Sequence) -> Optional[Any]:
             return None
 
         obj = obj[i]
+    assert False
 
 
 def filesafe(s: str, replacement: str = "-"):
     """
-    Converts a string to a file safe string. 
-    Removes all non-alphanumeric characters and 
+    Converts a string to a file safe string.
+    Removes all non-alphanumeric characters and
     replaces them with the replacement string.
     """
     return re.sub(r"[^\w\d-]", replacement, s).lower()
 
 
-def aslist(obj: any):
+def aslist(obj: Any):
     """
-    Converts an object to a list. If the object is 
+    Converts an object to a list. If the object is
     already a list, it is returned as is.
     """
     if isinstance(obj, list):
@@ -195,8 +197,7 @@ def iter_pipeline_combinations() -> Generator[PipelineCombination, Any, None]:
     - Napoleon Bonaparte
     """
     for pipeline_label, pipeline_id in PIPELINE_NAMES.items():
-        for pipeline_perturb_label, pipeline_perturb_id in \
-            PIPELINE_NAMES.items():
+        for pipeline_perturb_label, pipeline_perturb_id in PIPELINE_NAMES.items():
             for step in PIPELINE_STEPS:
                 for connectivity_method in CONNECTIVITY_METHODS:
                     for nuisance_method in NUISANCE_METHODS:
