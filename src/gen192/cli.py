@@ -294,8 +294,18 @@ def main(checkout_sha="89160708710aa6765479949edaca1fe18e4f65e3"):
         # Set connectivity method
         multi_set(
             pipeline.config,
+            index=["timeseries_extraction", "run"],
+            value=True,
+        )
+        multi_set(
+            pipeline.config,
             index=["timeseries_extraction", "connectivity_matrix", "using"],
             value=aslist(combi.connectivity_method),
+        )
+        multi_set(
+            pipeline.config,
+            index=["timeseries_extraction", "connectivity_matrix", "measure"],
+            value=aslist("Pearson"),
         )
 
         # Set nuisance method
