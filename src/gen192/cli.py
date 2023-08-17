@@ -7,7 +7,7 @@ import re
 import shutil
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Any, Generator, Iterable, List, Optional, Sequence
+from typing import Any, Dict, Generator, Iterable, List, Optional, Sequence, Tuple
 
 import yaml
 
@@ -17,14 +17,24 @@ PIPELINE_NAMES = {
     "RBC": "RBCv0",
     "fMRIPrep": "cpac_fmriprep-options",
 }
-CONNECTIVITY_METHODS = ["AFNI", "Nilearn"]
-NUISANCE_METHODS = [True, False]
+"""Maps pipeline names to pipeline IDs for all pipelines that should be included in the generation."""
 
+CONNECTIVITY_METHODS = ["AFNI", "Nilearn"]
+"""Connectivity methods to include in the generation."""
+
+NUISANCE_METHODS = [True, False]
+"""Nuisance methods to include in the generation."""
+
+
+MergePath = List[str]
+"""A path in the C-PAC config (to merge from a perturbed pipeline)"""
 
 @dataclass
 class PipelineStep:
+    """Represents a pipeline step that should be merged from a perturbed pipeline"""
+
     name: str
-    merge_paths: List[List[str]]
+    merge_paths: List[MergePath]
 
 
 PIPELINE_STEPS: List[PipelineStep] = [
@@ -32,7 +42,6 @@ PIPELINE_STEPS: List[PipelineStep] = [
     PipelineStep(
         name="Structural Registration",
         merge_paths=[
-            ["anatomical_preproc"],
             ["registration_workflows", "anatomical_registration"],
         ],
     ),
@@ -42,11 +51,14 @@ PIPELINE_STEPS: List[PipelineStep] = [
     PipelineStep(
         name="Functional Registration",
         merge_paths=[
-            ["anatomical_preproc"],
             ["registration_workflows", "functional_registration", "coregistration"],
         ],
     ),
 ]
+"""Pipeline steps and their paths in the C-PAC config to include in the generation."""
+
+
+# Utilities
 
 
 @contextmanager
@@ -87,10 +99,20 @@ class PipelineConfig:
     file: pl.Path
     config: dict
 
-    def clone(self):
+    def clone(self) -> "PipelineConfig":
         return PipelineConfig(
             name=self.name, file=self.file, config=copy.deepcopy(self.config)
         )
+
+    def set_name(self, name: str) -> None:
+        self.name = name
+        self.config["pipeline_setup"]["pipeline_name"] = name
+
+    def dump(self, exist_ok=False) -> None:
+        if self.file.exists() and not exist_ok:
+            raise FileExistsError(f"File {self.file} already exists")
+        with open(self.file, "w") as handle:
+            yaml.dump(self.config, handle)
 
 
 def multi_get(obj: dict, index: Iterable) -> Optional[Any]:
@@ -180,8 +202,13 @@ def b64_urlsafe_hash(s: str):
     )
 
 
+# Generation
+
+
 @dataclass
 class PipelineCombination:
+    """Represents a combination of all parameters pipeline generation should be run for"""
+
     pipeline_label: str
     pipeline_id: str
     pipeline_perturb_label: str
@@ -190,9 +217,24 @@ class PipelineCombination:
     connectivity_method: str
     use_nuisance_correction: bool
 
+    def name(self, pipeline_num: int) -> str:
+        return (
+            f"p{pipeline_num:03d}_"
+            f"base-{filesafe(self.pipeline_label)}_"
+            f"perturb-{filesafe(self.pipeline_perturb_label)}_"
+            f"step-{filesafe(self.step.name)}_"
+            f"conn-{filesafe(self.connectivity_method)}_"
+            f"nuisance-{filesafe(str(self.use_nuisance_correction))}"
+        )
 
-def iter_pipeline_combinations() -> Generator[PipelineCombination, Any, None]:
+    def filename(self, pipeline_num: int) -> str:
+        return self.name(pipeline_num) + ".yml"
+
+
+def iter_pipeline_combis() -> Generator[PipelineCombination, Any, None]:
     """
+    Iterate over all possible parameter combinations.
+
     From the heights of these pyramids, forty centuries look down on us.
     - Napoleon Bonaparte
     """
@@ -212,7 +254,99 @@ def iter_pipeline_combinations() -> Generator[PipelineCombination, Any, None]:
                         )
 
 
+def iter_pipeline_combis_no_duplicates() -> Generator[PipelineCombination, Any, None]:
+    """Iterates over all pipeline combinations that are not duplicates"""
+    for combi in iter_pipeline_combis():
+        if combi.pipeline_id != combi.pipeline_perturb_id:
+            yield combi
+
+
+def load_pipeline_config(pipeline_config_file: pl.Path) -> PipelineConfig:
+    """Loads a pipeline config from a file and returns the pipeline name and config"""
+    with open(pipeline_config_file, "r") as handle:
+        pipeline_config = yaml.safe_load(handle)
+    return PipelineConfig(
+        name=pipeline_config["pipeline_setup"]["pipeline_name"],
+        file=pipeline_config_file,
+        config=pipeline_config,
+    )
+
+
+ConfigLookupTable = Dict[str, PipelineConfig]
+"""A dictionary of pipeline name to config"""
+
+
+def cpac_dir_to_lookup(dir_configs: pl.Path) -> ConfigLookupTable:
+    """Loads all pipeline configs from a directory and returns a dictionary of pipeline name to config"""
+    configs: ConfigLookupTable = {}
+    for pipeline_config_file in dir_configs.glob(f"pipeline_config_*.yml"):
+        pipeline_config = load_pipeline_config(pipeline_config_file)
+
+        # Detect duplicate pipeline names
+        pipeline_unique_name = pipeline_config.name
+        while pipeline_unique_name in configs:
+            print(
+                f"WARNING: Duplicate pipeline name: "
+                f"{pipeline_unique_name}: "
+                f"{pipeline_config_file} - {configs[pipeline_unique_name].file}"
+            )
+            pipeline_unique_name += "_dup"
+
+        configs[pipeline_unique_name] = pipeline_config
+    return configs
+
+
+def generate_pipeline_from_combi(
+    pipeline_num: int, combi: PipelineCombination, configs: ConfigLookupTable
+) -> PipelineConfig:
+    # Copy pipeline
+    pipeline = configs[combi.pipeline_id].clone()
+    pipeline_perturb = configs[combi.pipeline_perturb_id].clone()
+
+    # Merge perturbation step
+    for merge_path in combi.step.merge_paths:
+        snippet = multi_get(pipeline_perturb.config, index=merge_path)
+
+        if snippet is None:
+            print(f"WARNING: Cant find path {merge_path} in {pipeline_perturb.name}")
+            multi_del(pipeline.config, index=merge_path)
+            continue
+
+        multi_set(pipeline.config, index=merge_path, value=snippet)
+
+    # Set connectivity method
+    multi_set(
+        pipeline.config,
+        index=["timeseries_extraction", "run"],
+        value=True,
+    )
+    multi_set(
+        pipeline.config,
+        index=["timeseries_extraction", "connectivity_matrix", "using"],
+        value=aslist(combi.connectivity_method),
+    )
+    multi_set(
+        pipeline.config,
+        index=["timeseries_extraction", "connectivity_matrix", "measure"],
+        value=aslist("Pearson"),
+    )
+
+    # Set nuisance method
+    multi_set(
+        pipeline.config,
+        index=["nuisance_corrections", "2-nuisance_regression", "run"],
+        value=aslist(combi.use_nuisance_correction),
+    )
+
+    # Set pipeline name
+    pipeline.set_name(combi.name(pipeline_num))
+
+    return pipeline
+
+
 def main(checkout_sha="89160708710aa6765479949edaca1fe18e4f65e3"):
+    """Main entry point for the CLI"""
+
     cpac_version_hash = b64_urlsafe_hash(checkout_sha)
 
     dir_dist = pl.Path("dist")
@@ -225,25 +359,7 @@ def main(checkout_sha="89160708710aa6765479949edaca1fe18e4f65e3"):
         download_cpac_configs(checkout_sha, dir_configs)
 
     # Load pipeline YAMLS
-    configs = {}
-    for pipeline_config_file in dir_configs.glob(f"pipeline_config_*.yml"):
-        with open(pipeline_config_file, "r") as handle:
-            pipeline_config = yaml.safe_load(handle)
-            pipeline_name = pipeline_config["pipeline_setup"]["pipeline_name"]
-
-            while pipeline_name in configs:
-                print(
-                    f"WARNING: Duplicate pipeline name: "
-                    f"{pipeline_name}: "
-                    f"{pipeline_config_file} - {configs[pipeline_name].file}"
-                )
-                pipeline_name += "_dup"
-
-            configs[pipeline_name] = PipelineConfig(
-                name=pipeline_config["pipeline_setup"]["pipeline_name"],
-                file=pipeline_config_file,
-                config=pipeline_config,
-            )
+    configs = cpac_dir_to_lookup(dir_configs)
 
     # Check that all pipelines are present
     for pipeline_label, pipeline_id in PIPELINE_NAMES.items():
@@ -252,74 +368,23 @@ def main(checkout_sha="89160708710aa6765479949edaca1fe18e4f65e3"):
             exit(1)
 
     # Generate pipelines
-    counter = 0
     dir_gen = dir_build / "gen192_nofork"
     dir_gen.mkdir(parents=True, exist_ok=True)
 
     print(f'Generating in folder "{dir_gen}"')
 
-    for combi in iter_pipeline_combinations():
-        if combi.pipeline_id == combi.pipeline_perturb_id:
-            continue
-
-        pipeline_num = counter
-        counter += 1
-        filename = (
-            f"p{pipeline_num:03d}_"
-            f"base-{filesafe(combi.pipeline_label)}_"
-            f"perturb-{filesafe(combi.pipeline_perturb_label)}_"
-            f"step-{filesafe(combi.step.name)}_"
-            f"conn-{filesafe(combi.connectivity_method)}_"
-            f"nuisance-{filesafe(str(combi.use_nuisance_correction))}"
-            f".yml"
-        )
+    for pipeline_num, combi in enumerate(iter_pipeline_combis_no_duplicates()):
+        filename = combi.filename(pipeline_num)
 
         print(f"Generating {filename}")
 
-        # Copy pipeline
-        pipeline = configs[combi.pipeline_id].clone()
-        pipeline_perturb = configs[combi.pipeline_perturb_id].clone()
-
-        # Merge perturbation step
-        for p in combi.step.merge_paths:
-            snippet = multi_get(pipeline_perturb.config, index=p)
-
-            if snippet is None:
-                print(f"WARNING: Cant find path {p} in {pipeline_perturb.name}")
-                multi_del(pipeline.config, index=p)
-                continue
-
-            multi_set(pipeline.config, index=p, value=snippet)
-
-        # Set connectivity method
-        multi_set(
-            pipeline.config,
-            index=["timeseries_extraction", "run"],
-            value=True,
-        )
-        multi_set(
-            pipeline.config,
-            index=["timeseries_extraction", "connectivity_matrix", "using"],
-            value=aslist(combi.connectivity_method),
-        )
-        multi_set(
-            pipeline.config,
-            index=["timeseries_extraction", "connectivity_matrix", "measure"],
-            value=aslist("Pearson"),
-        )
-
-        # Set nuisance method
-        multi_set(
-            pipeline.config,
-            index=["nuisance_corrections", "2-nuisance_regression", "run"],
-            value=aslist(combi.use_nuisance_correction),
-        )
+        combined = generate_pipeline_from_combi(pipeline_num, combi, configs)
+        combined.file = dir_gen / filename
 
         # Write pipeline
-        with open(dir_gen / filename, "w") as handle:
-            yaml.dump(pipeline.config, handle)
+        combined.dump(exist_ok=False)
 
-    # Zip artifacts
+    # Zip all folders in build
     for subfolder in dir_build.glob("*"):
         if subfolder.is_dir():
             shutil.make_archive(
