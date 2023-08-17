@@ -29,6 +29,7 @@ NUISANCE_METHODS = [True, False]
 MergePath = List[str]
 """A path in the C-PAC config (to merge from a perturbed pipeline)"""
 
+
 @dataclass
 class PipelineStep:
     """Represents a pipeline step that should be merged from a perturbed pipeline"""
