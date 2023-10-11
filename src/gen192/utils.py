@@ -1,6 +1,6 @@
 import os
-from contextlib import contextmanager
 import re
+from contextlib import contextmanager
 
 
 @contextmanager

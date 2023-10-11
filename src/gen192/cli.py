@@ -8,8 +8,8 @@ from typing import Any, Dict, Generator, Iterable, List, Optional, Sequence
 
 import yaml
 
-from cpac_config_extractor import fetch_and_expand_cpac_configs
-from utils import filesafe
+from .cpac_config_extractor import fetch_and_expand_cpac_configs
+from .utils import filesafe
 
 PIPELINE_NAMES = {
     "ABCD": "abcd-options",

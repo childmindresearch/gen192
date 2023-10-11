@@ -2,7 +2,7 @@ import os
 import pathlib as pl
 import sys
 
-from utils import cd, filesafe
+from .utils import cd, filesafe
 
 
 def _download_cpac_repo(cpac_dir: pl.Path, checkout_sha: str):
@@ -25,7 +25,7 @@ def fetch_and_expand_cpac_configs(
     config_names_ids: dict[str, str],
 ):
     """
-    Fetches C-PAC configs from github, fully expands them (FROM: parent), 
+    Fetches C-PAC configs from github, fully expands them (FROM: parent),
     and then saves them to the specified directory.
     """
     if not (cpac_dir / "CPAC").exists():
@@ -40,7 +40,8 @@ def fetch_and_expand_cpac_configs(
         sys.path.append(cpac_module_path)
 
     from CPAC.utils.configuration.configuration import Preconfiguration  # noqa
-    from CPAC.utils.configuration.yaml_template import create_yaml_from_template  # noqa
+    from CPAC.utils.configuration.yaml_template import \
+        create_yaml_from_template  # noqa
 
     for config_name, config_id in config_names_ids.items():
         conf = Preconfiguration(config_id)
