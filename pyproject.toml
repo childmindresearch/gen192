@@ -10,6 +10,10 @@ packages = [{include = "gen192", from = "src"}]
 [tool.poetry.dependencies]
 python = "^3.10"
 pyyaml = "^6.0.1"
+nipype = "^1.8.6"  # for cpac config expansion
+voluptuous = "^0.13.1"  # for cpac config expansion
+pathvalidate = "^3.2.0"  # for cpac config expansion
+yamlordereddictloader = "^0.4.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.3.2"

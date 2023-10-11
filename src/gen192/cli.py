@@ -1,21 +1,21 @@
 import base64
 import copy
 import hashlib
-import os
 import pathlib as pl
-import re
 import shutil
-from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Any, Dict, Generator, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Dict, Generator, Iterable, List, Optional, Sequence
 
 import yaml
 
+from cpac_config_extractor import fetch_and_expand_cpac_configs
+from utils import filesafe
+
 PIPELINE_NAMES = {
-    "ABCD": "cpac_abcd-options",
-    "CCS": "cpac_ccs-options",
-    "RBC": "RBCv0",
-    "fMRIPrep": "cpac_fmriprep-options",
+    "ABCD": "abcd-options",
+    "CCS": "ccs-options",
+    "RBC": "rbc-options",
+    "fMRIPrep": "fmriprep-options",
 }
 """Maps pipeline names to pipeline IDs for all pipelines that should be included in the generation."""
 
@@ -60,36 +60,6 @@ PIPELINE_STEPS: List[PipelineStep] = [
 
 
 # Utilities
-
-
-@contextmanager
-def cd(path):
-    """Context manager for changing the working directory"""
-    old_wd = os.getcwd()
-    os.chdir(path)
-    try:
-        yield
-    finally:
-        os.chdir(old_wd)
-
-
-def download_cpac_configs(checkout_sha: str, dir_configs: pl.Path):
-    """Downloads C-PAC configs from github and extracts them to the specified directory"""
-
-    print(f"Check out C-PAC ({checkout_sha}) from github...")
-    print(f"-------------------------------------------")
-    os.system("git clone https://github.com/FCP-INDI/C-PAC.git dist/temp_cpac")
-    with cd("dist/temp_cpac"):
-        if os.system(f'git checkout "{checkout_sha}"') != 0:
-            print(f"Could not checkout {checkout_sha}")
-            exit(1)
-    print(f"-------------------------------------------")
-
-    print(f"Extracting configs...")
-    os.system(f"cp -r dist/temp_cpac/CPAC/resources/configs {dir_configs}")
-
-    print(f"Removing C-PAC...")
-    os.system("rm -rf dist/temp_cpac")
 
 
 @dataclass
@@ -173,15 +143,6 @@ def multi_del(obj: dict, index: Sequence) -> Optional[Any]:
     assert False
 
 
-def filesafe(s: str, replacement: str = "-"):
-    """
-    Converts a string to a file safe string.
-    Removes all non-alphanumeric characters and
-    replaces them with the replacement string.
-    """
-    return re.sub(r"[^\w\d-]", replacement, s).lower()
-
-
 def aslist(obj: Any):
     """
     Converts an object to a list. If the object is
@@ -210,9 +171,7 @@ def b64_urlsafe_hash(s: str):
 class PipelineCombination:
     """Represents a combination of all parameters pipeline generation should be run for"""
 
-    pipeline_label: str
     pipeline_id: str
-    pipeline_perturb_label: str
     pipeline_perturb_id: str
     step: PipelineStep
     connectivity_method: str
@@ -221,8 +180,8 @@ class PipelineCombination:
     def name(self, pipeline_num: int) -> str:
         return (
             f"p{pipeline_num:03d}_"
-            f"base-{filesafe(self.pipeline_label)}_"
-            f"perturb-{filesafe(self.pipeline_perturb_label)}_"
+            f"base-{filesafe(self.pipeline_id)}_"
+            f"perturb-{filesafe(self.pipeline_perturb_id)}_"
             f"step-{filesafe(self.step.name)}_"
             f"conn-{filesafe(self.connectivity_method)}_"
             f"nuisance-{filesafe(str(self.use_nuisance_correction))}"
@@ -239,16 +198,14 @@ def iter_pipeline_combis() -> Generator[PipelineCombination, Any, None]:
     From the heights of these pyramids, forty centuries look down on us.
     - Napoleon Bonaparte
     """
-    for pipeline_label, pipeline_id in PIPELINE_NAMES.items():
-        for pipeline_perturb_label, pipeline_perturb_id in PIPELINE_NAMES.items():
+    for pipeline_id in PIPELINE_NAMES.keys():
+        for pipeline_perturb_id in PIPELINE_NAMES.keys():
             for step in PIPELINE_STEPS:
                 for connectivity_method in CONNECTIVITY_METHODS:
                     for nuisance_method in NUISANCE_METHODS:
                         yield PipelineCombination(
                             pipeline_id=pipeline_id,
-                            pipeline_label=pipeline_label,
                             pipeline_perturb_id=pipeline_perturb_id,
-                            pipeline_perturb_label=pipeline_perturb_label,
                             step=step,
                             connectivity_method=connectivity_method,
                             use_nuisance_correction=nuisance_method,
@@ -275,26 +232,6 @@ def load_pipeline_config(pipeline_config_file: pl.Path) -> PipelineConfig:
 
 ConfigLookupTable = Dict[str, PipelineConfig]
 """A dictionary of pipeline name to config"""
-
-
-def cpac_dir_to_lookup(dir_configs: pl.Path) -> ConfigLookupTable:
-    """Loads all pipeline configs from a directory and returns a dictionary of pipeline name to config"""
-    configs: ConfigLookupTable = {}
-    for pipeline_config_file in dir_configs.glob(f"pipeline_config_*.yml"):
-        pipeline_config = load_pipeline_config(pipeline_config_file)
-
-        # Detect duplicate pipeline names
-        pipeline_unique_name = pipeline_config.name
-        while pipeline_unique_name in configs:
-            print(
-                f"WARNING: Duplicate pipeline name: "
-                f"{pipeline_unique_name}: "
-                f"{pipeline_config_file} - {configs[pipeline_unique_name].file}"
-            )
-            pipeline_unique_name += "_dup"
-
-        configs[pipeline_unique_name] = pipeline_config
-    return configs
 
 
 def generate_pipeline_from_combi(
@@ -345,28 +282,33 @@ def generate_pipeline_from_combi(
     return pipeline
 
 
-def main(checkout_sha="89160708710aa6765479949edaca1fe18e4f65e3"):
+def main(checkout_sha="8ebbd4e3e836eb6cdd1c7e7c4ca2f49b0c55cf79"):
     """Main entry point for the CLI"""
 
     cpac_version_hash = b64_urlsafe_hash(checkout_sha)
 
     dir_dist = pl.Path("dist")
     dir_build = pl.Path("build")
+    dir_temp = pl.Path("temp")
     dir_build.mkdir(parents=True, exist_ok=True)
+    dir_temp.mkdir(parents=True, exist_ok=True)
     dir_configs = dir_build / f"cpac_source_configs_{cpac_version_hash}"
 
     # Download C-PAC configs
-    if not dir_configs.exists():
-        download_cpac_configs(checkout_sha, dir_configs)
+    fetch_and_expand_cpac_configs(
+        cpac_dir=dir_temp / "cpac_source",
+        output_dir=dir_configs,
+        checkout_sha=checkout_sha,
+        config_names_ids=PIPELINE_NAMES,
+    )
 
     # Load pipeline YAMLS
-    configs = cpac_dir_to_lookup(dir_configs)
-
-    # Check that all pipelines are present
-    for pipeline_label, pipeline_id in PIPELINE_NAMES.items():
-        if not pipeline_id in configs:
-            print(f"ERROR: Could not find pipeline {pipeline_label}")
-            exit(1)
+    configs = {}
+    for config_name in PIPELINE_NAMES.keys():
+        config_path = dir_configs / (filesafe(config_name) + ".yml")
+        pipeline = load_pipeline_config(config_path)
+        configs[config_name] = pipeline
+        print(f"Loaded pipeline {config_name} from {config_path}")
 
     # Generate pipelines
     dir_gen = dir_build / "gen192_nofork"
