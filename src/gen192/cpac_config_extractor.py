@@ -40,8 +40,7 @@ def fetch_and_expand_cpac_configs(
         sys.path.append(cpac_module_path)
 
     from CPAC.utils.configuration.configuration import Preconfiguration  # noqa
-    from CPAC.utils.configuration.yaml_template import \
-        create_yaml_from_template  # noqa
+    from CPAC.utils.configuration.yaml_template import create_yaml_from_template  # noqa
 
     for config_name, config_id in config_names_ids.items():
         conf = Preconfiguration(config_id)
