@@ -1,6 +1,7 @@
 import base64
 import copy
 import hashlib
+import json
 import pathlib as pl
 import shutil
 from dataclasses import dataclass
@@ -244,11 +245,20 @@ def generate_pipeline_from_combi(
     # Merge perturbation step
     for merge_path in combi.step.merge_paths:
         snippet = multi_get(pipeline_perturb.config, index=merge_path)
+        snippet_target = multi_get(pipeline.config, index=merge_path)
 
         if snippet is None:
             print(f"WARNING: Cant find path {merge_path} in {pipeline_perturb.name}")
             multi_del(pipeline.config, index=merge_path)
             continue
+
+        snippet_json = json.dumps(snippet, sort_keys=True, indent=2)
+        snippet_target_json = json.dumps(snippet_target, sort_keys=True, indent=2)
+
+        if snippet_json == snippet_target_json:
+            print(
+                f'WARNING: "{combi.step.name}" perturbation ({combi.pipeline_perturb_id}) is identical to target ({combi.pipeline_id}).'
+            )
 
         multi_set(pipeline.config, index=merge_path, value=snippet)
 
