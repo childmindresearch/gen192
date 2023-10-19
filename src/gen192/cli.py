@@ -280,9 +280,16 @@ def generate_pipeline_from_combi(
     )
 
     # Set nuisance method
+    # Using regressors for calculations
     multi_set(
         pipeline.config,
         index=["nuisance_corrections", "2-nuisance_regression", "run"],
+        value=aslist(combi.use_nuisance_correction),
+    )
+    # Generating regressors (opposed to ingressing them)
+    multi_set(
+        pipeline.config,
+        index=["nuisance_corrections", "2-nuisance_regression", "create_regressors"],
         value=aslist(combi.use_nuisance_correction),
     )
 
