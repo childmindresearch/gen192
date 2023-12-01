@@ -5,17 +5,17 @@ import sys
 from .utils import cd, filesafe
 
 
-def _download_cpac_repo(cpac_dir: pl.Path, checkout_sha: str):
+def _download_cpac_repo(cpac_dir: pl.Path, checkout_sha: str) -> None:
     """Downloads C-PAC configs from github and extracts them to the specified directory"""
 
     print(f"Check out C-PAC ({checkout_sha}) from github...")
-    print(f"-------------------------------------------")
+    print("-------------------------------------------")
     os.system(f"git clone https://github.com/FCP-INDI/C-PAC.git {cpac_dir}")
     with cd(cpac_dir):
         if os.system(f'git checkout "{checkout_sha}"') != 0:
             print(f"Could not checkout {checkout_sha}")
             exit(1)
-    print(f"-------------------------------------------")
+    print("-------------------------------------------")
 
 
 def fetch_and_expand_cpac_configs(
@@ -23,7 +23,7 @@ def fetch_and_expand_cpac_configs(
     output_dir: pl.Path,
     checkout_sha: str,
     config_names_ids: dict[str, str],
-):
+) -> None:
     """
     Fetches C-PAC configs from github, fully expands them (FROM: parent),
     and then saves them to the specified directory.
@@ -46,7 +46,5 @@ def fetch_and_expand_cpac_configs(
         conf = Preconfiguration(config_id)
         config_yaml_string = create_yaml_from_template(conf.dict(), "blank")
 
-        with open(
-            output_dir / (filesafe(config_name) + ".yml"), "w", encoding="utf-8"
-        ) as handle:
+        with open(output_dir / (filesafe(config_name) + ".yml"), "w", encoding="utf-8") as handle:
             handle.write(config_yaml_string)

@@ -47,9 +47,7 @@ PIPELINE_STEPS: List[PipelineStep] = [
             ["registration_workflows", "anatomical_registration"],
         ],
     ),
-    PipelineStep(
-        name="Functional Masking", merge_paths=[["functional_preproc", "func_masking"]]
-    ),
+    PipelineStep(name="Functional Masking", merge_paths=[["functional_preproc", "func_masking"]]),
     PipelineStep(
         name="Functional Registration",
         merge_paths=[
@@ -72,22 +70,20 @@ class PipelineConfig:
     config: dict
 
     def clone(self) -> "PipelineConfig":
-        return PipelineConfig(
-            name=self.name, file=self.file, config=copy.deepcopy(self.config)
-        )
+        return PipelineConfig(name=self.name, file=self.file, config=copy.deepcopy(self.config))
 
     def set_name(self, name: str) -> None:
         self.name = name
         self.config["pipeline_setup"]["pipeline_name"] = name
 
-    def dump(self, exist_ok=False) -> None:
+    def dump(self, exist_ok: bool = False) -> None:
         if self.file.exists() and not exist_ok:
             raise FileExistsError(f"File {self.file} already exists")
         with open(self.file, "w") as handle:
             yaml.dump(self.config, handle)
 
 
-def multi_get(obj: dict, index: Iterable) -> Optional[Any]:
+def multi_get(obj: dict, index: Iterable) -> Optional[Any]:  # noqa: ANN401
     """
     Gets a value from a nested dictionary.
     Returns None if the path does not exist.
@@ -99,7 +95,7 @@ def multi_get(obj: dict, index: Iterable) -> Optional[Any]:
     return obj
 
 
-def multi_set(obj: dict, index: Sequence, value: Any) -> bool:
+def multi_set(obj: dict, index: Sequence, value: Any) -> bool:  # noqa: ANN401
     """
     Sets a value in a nested dictionary.
     Returns True if the path exists or was able to be created
@@ -120,7 +116,7 @@ def multi_set(obj: dict, index: Sequence, value: Any) -> bool:
     assert False
 
 
-def multi_del(obj: dict, index: Sequence) -> Optional[Any]:
+def multi_del(obj: dict, index: Sequence) -> Optional[Any]:  # noqa: ANN401
     """
     Deletes a value from a nested dictionary.
     Returns the value if the path exists and
@@ -144,7 +140,7 @@ def multi_del(obj: dict, index: Sequence) -> Optional[Any]:
     assert False
 
 
-def aslist(obj: Any):
+def aslist(obj: Any) -> list:  # noqa: ANN401
     """
     Converts an object to a list. If the object is
     already a list, it is returned as is.
@@ -154,15 +150,11 @@ def aslist(obj: Any):
     return [obj]
 
 
-def b64_urlsafe_hash(s: str):
+def b64_urlsafe_hash(s: str) -> str:
     """
     Hashes a string and returns a base64 urlsafe encoded version of the hash.
     """
-    return (
-        base64.urlsafe_b64encode(hashlib.sha1(s.encode()).digest())
-        .decode()
-        .replace("=", "")
-    )
+    return base64.urlsafe_b64encode(hashlib.sha1(s.encode()).digest()).decode().replace("=", "")
 
 
 # Generation
@@ -257,7 +249,8 @@ def generate_pipeline_from_combi(
 
         if snippet_json == snippet_target_json:
             print(
-                f'WARNING: "{combi.step.name}" perturbation ({combi.pipeline_perturb_id}) is identical to target ({combi.pipeline_id}).'
+                f'WARNING: "{combi.step.name}" perturbation ({combi.pipeline_perturb_id}) '
+                f"is identical to target ({combi.pipeline_id})."
             )
 
         multi_set(pipeline.config, index=merge_path, value=snippet)
@@ -299,7 +292,7 @@ def generate_pipeline_from_combi(
     return pipeline
 
 
-def main(checkout_sha="66400a8006288f7c83d5457ccfd1f423686c2754"):
+def main(checkout_sha: str = "66400a8006288f7c83d5457ccfd1f423686c2754") -> None:
     """Main entry point for the CLI"""
 
     cpac_version_hash = b64_urlsafe_hash(checkout_sha)
