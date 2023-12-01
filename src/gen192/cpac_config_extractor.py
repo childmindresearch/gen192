@@ -48,3 +48,15 @@ def fetch_and_expand_cpac_configs(
 
         with open(output_dir / (filesafe(config_name) + ".yml"), "w", encoding="utf-8") as handle:
             handle.write(config_yaml_string)
+
+
+def check_cpac_config(config: dict) -> bool:
+    """Checks if the specified file is a valid C-PAC config file"""
+    from CPAC.utils.configuration.configuration import Configuration  # noqa
+
+    try:
+        Configuration(config)
+    except Exception as e:
+        print(f"CPAC config validation error: {e}")
+        return False
+    return True

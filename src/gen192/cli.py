@@ -9,7 +9,7 @@ from typing import Any, Dict, Generator, Iterable, List, Optional, Sequence
 
 import yaml
 
-from .cpac_config_extractor import fetch_and_expand_cpac_configs
+from .cpac_config_extractor import check_cpac_config, fetch_and_expand_cpac_configs
 from .utils import filesafe
 
 PIPELINE_NAMES = {
@@ -283,7 +283,7 @@ def generate_pipeline_from_combi(
     multi_set(
         pipeline.config,
         index=["nuisance_corrections", "2-nuisance_regression", "create_regressors"],
-        value=aslist(combi.use_nuisance_correction),
+        value=combi.use_nuisance_correction,
     )
 
     # Set pipeline name
@@ -333,6 +333,9 @@ def main(checkout_sha: str = "66400a8006288f7c83d5457ccfd1f423686c2754") -> None
 
         combined = generate_pipeline_from_combi(pipeline_num, combi, configs)
         combined.file = dir_gen / filename
+
+        # Let CPAC check if it is a valid config
+        check_cpac_config(combined.config)
 
         # Write pipeline
         combined.dump(exist_ok=False)
