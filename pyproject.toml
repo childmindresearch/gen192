@@ -94,3 +94,6 @@ convention = "google"
 [build-system]
 requires = ["poetry-core>=1.2.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+gen192 = "gen192.cli:main"
