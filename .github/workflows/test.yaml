@@ -89,6 +89,6 @@ jobs:
       with:
         python-version: '3.11'
         cache: poetry
-    - run: |
+    - run: |-
         poetry install
         poetry run mypy .

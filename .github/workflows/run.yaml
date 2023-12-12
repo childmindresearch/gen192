@@ -6,28 +6,28 @@ permissions:
 on:
   push:
     branches:
-      - main
+    - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.x"
-      - name: Install dependencies
-        run: |
-          python -m pip install poetry
-          poetry install
-      - name: Build docs
-        run: |
-          poetry run gen192
-      - uses: "softprops/action-gh-release@v1"
-        with:
-          prerelease: true
-          name: "Development Build"
-          tag_name: "dev"
-          files: |
-            dist/*.zip
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: 3.x
+    - name: Install dependencies
+      run: |
+        python -m pip install poetry
+        poetry install
+    - name: Build docs
+      run: |
+        poetry run gen192
+    - uses: softprops/action-gh-release@v1
+      with:
+        prerelease: true
+        name: Development Build
+        tag_name: dev
+        files: |
+          dist/*.zip

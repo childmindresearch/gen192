@@ -29,6 +29,9 @@ pdoc = "^14.0.0"
 [tool.poetry.extras]
 docs = ["pdoc"]
 
+[tool.poetry.scripts]
+gen192 = "gen192.cli:main"
+
 [tool.pytest.ini_options]
 pythonpath = [
   "src"
@@ -37,7 +40,7 @@ pythonpath = [
 [tool.mypy]
 ignore_missing_imports = true
 exclude = [
-    "^temp",
+  "^temp"
 ]
 
 [tool.ruff]
@@ -94,6 +97,3 @@ convention = "google"
 [build-system]
 requires = ["poetry-core>=1.2.0"]
 build-backend = "poetry.core.masonry.api"
-
-[tool.poetry.scripts]
-gen192 = "gen192.cli:main"

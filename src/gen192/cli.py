@@ -10,7 +10,7 @@ from typing import Any, Dict, Generator, Iterable, List, Optional, Sequence
 import yaml
 
 from .cpac_config_extractor import check_cpac_config, fetch_and_expand_cpac_configs
-from .utils import filesafe
+from .utils import filesafe, print_warning
 
 PIPELINE_NAMES = {
     "ABCD": "abcd-options",
@@ -47,7 +47,21 @@ PIPELINE_STEPS: List[PipelineStep] = [
             ["registration_workflows", "anatomical_registration"],
         ],
     ),
-    PipelineStep(name="Functional Masking", merge_paths=[["functional_preproc", "func_masking"]]),
+    PipelineStep(
+        name="Functional Masking",
+        merge_paths=[
+            ["functional_preproc", "func_masking"],
+            ["registration_workflows", "anatomical_registration", "T1w_brain_template_mask"],
+            [
+                "registration_workflows",
+                "functional_registration",
+                "func_registration_to_template",
+                "target_template",
+                "T1_template",
+                "T1w_brain_template_mask_funcreg",
+            ],
+        ],
+    ),
     PipelineStep(
         name="Functional Registration",
         merge_paths=[
@@ -68,6 +82,7 @@ class PipelineConfig:
     name: str
     file: pl.Path
     config: dict
+    notes: str | None = None
 
     def clone(self) -> "PipelineConfig":
         return PipelineConfig(name=self.name, file=self.file, config=copy.deepcopy(self.config))
@@ -81,6 +96,9 @@ class PipelineConfig:
             raise FileExistsError(f"File {self.file} already exists")
         with open(self.file, "w") as handle:
             yaml.dump(self.config, handle)
+        if self.notes is not None:
+            with open(self.file.with_suffix(".notes.txt"), "w") as handle:
+                handle.write(self.notes)
 
 
 def multi_get(obj: dict, index: Iterable) -> Optional[Any]:  # noqa: ANN401
@@ -235,25 +253,31 @@ def generate_pipeline_from_combi(
     pipeline_perturb = configs[combi.pipeline_perturb_id].clone()
 
     # Merge perturbation step
+    merge_paths_identical = []
     for merge_path in combi.step.merge_paths:
         snippet = multi_get(pipeline_perturb.config, index=merge_path)
         snippet_target = multi_get(pipeline.config, index=merge_path)
 
         if snippet is None:
-            print(f"WARNING: Cant find path {merge_path} in {pipeline_perturb.name}")
+            warning = f"Cant find path {merge_path} in {pipeline_perturb.name}"
+            pipeline.notes = pipeline.notes + "\n" + warning if pipeline.notes else warning
+            print_warning(warning)
             multi_del(pipeline.config, index=merge_path)
             continue
 
         snippet_json = json.dumps(snippet, sort_keys=True, indent=2)
         snippet_target_json = json.dumps(snippet_target, sort_keys=True, indent=2)
 
-        if snippet_json == snippet_target_json:
-            print(
-                f'WARNING: "{combi.step.name}" perturbation ({combi.pipeline_perturb_id}) '
-                f"is identical to target ({combi.pipeline_id})."
-            )
-
+        merge_paths_identical.append(snippet_json == snippet_target_json)
         multi_set(pipeline.config, index=merge_path, value=snippet)
+
+    if all(merge_paths_identical):
+        warning = (
+            f'"{combi.step.name}" perturbation ({combi.pipeline_perturb_id}) '
+            f"is identical to target ({combi.pipeline_id})."
+        )
+        pipeline.notes = pipeline.notes + "\n" + warning if pipeline.notes else warning
+        print_warning(warning)
 
     # Set connectivity method
     multi_set(
@@ -335,7 +359,11 @@ def main(checkout_sha: str = "66400a8006288f7c83d5457ccfd1f423686c2754") -> None
         combined.file = dir_gen / filename
 
         # Let CPAC check if it is a valid config
-        check_cpac_config(combined.config)
+        ok, err = check_cpac_config(combined.config)
+        if not ok:
+            warning = f'CPAC-reported config validation error: "{err}"'
+            combined.notes = combined.notes + "\n" + warning if combined.notes else warning
+            print_warning(warning)
 
         # Write pipeline
         combined.dump(exist_ok=False)

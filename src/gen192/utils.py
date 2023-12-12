@@ -22,3 +22,8 @@ def filesafe(s: str, replacement: str = "-") -> str:
     replaces them with the replacement string.
     """
     return re.sub(r"[^\w\d-]", replacement, s).lower()
+
+
+def print_warning(msg: str) -> None:
+    """Prints a colored warning message to the console"""
+    print(f"\033[93mWARNING: {msg}\033[0m")

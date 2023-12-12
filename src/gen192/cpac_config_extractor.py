@@ -1,6 +1,7 @@
 import os
 import pathlib as pl
 import sys
+from typing import Literal
 
 from .utils import cd, filesafe
 
@@ -50,13 +51,12 @@ def fetch_and_expand_cpac_configs(
             handle.write(config_yaml_string)
 
 
-def check_cpac_config(config: dict) -> bool:
+def check_cpac_config(config: dict) -> tuple[Literal[True], None] | tuple[Literal[False], Exception]:
     """Checks if the specified file is a valid C-PAC config file"""
     from CPAC.utils.configuration.configuration import Configuration  # noqa
 
     try:
         Configuration(config)
     except Exception as e:
-        print(f"CPAC config validation error: {e}")
-        return False
-    return True
+        return False, e
+    return True, None
