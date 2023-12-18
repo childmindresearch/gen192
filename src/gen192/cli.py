@@ -231,7 +231,7 @@ def generate_pipeline_from_combi(
     return pipeline
 
 
-def main(checkout_sha: str = "66400a8006288f7c83d5457ccfd1f423686c2754") -> None:
+def main(checkout_sha: str = "1aec64ab4a8474f60bf320173b8e4ac469ca0b07") -> None:
     """Main entry point for the CLI"""
 
     cpac_version_hash = b64_urlsafe_hash(checkout_sha)
