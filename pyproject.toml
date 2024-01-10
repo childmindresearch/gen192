@@ -26,9 +26,6 @@ types-pyyaml = "^6.0.12.11"
 [tool.poetry.group.docs.dependencies]
 pdoc = "^14.3.0"
 
-[tool.poetry.extras]
-docs = ["pdoc"]
-
 [tool.poetry.scripts]
 gen192 = "gen192.cli:main"
 
