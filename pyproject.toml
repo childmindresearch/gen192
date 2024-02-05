@@ -16,15 +16,15 @@ pathvalidate = "^3.2.0"  # for cpac config expansion
 yamlordereddictloader = "^0.4.2"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^7.4.4"
+pytest = "^8.0.0"
 mypy = "^1.8.0"
 pre-commit = "^3.6.0"
 pytest-cov = "^4.1.0"
-ruff = "^0.1.11"
+ruff = "^0.1.15"
 types-pyyaml = "^6.0.12.11"
 
 [tool.poetry.group.docs.dependencies]
-pdoc = "^14.3.0"
+pdoc = "^14.4.0"
 
 [tool.poetry.scripts]
 gen192 = "gen192.cli:main"
