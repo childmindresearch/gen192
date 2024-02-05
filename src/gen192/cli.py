@@ -225,6 +225,53 @@ def generate_pipeline_from_combi(
         value=combi.use_nuisance_correction,
     )
 
+    # Deactivate all other derivatives than connectomes
+    multi_set(
+        pipeline.config,
+        index=["amplitude_low_frequency_fluctuation", "run"],
+        value=False,
+    )
+    multi_set(
+        pipeline.config,
+        index=["regional_homogeneity", "run"],
+        value=False,
+    )
+    multi_set(
+        pipeline.config,
+        index=["voxel_mirrored_homotopic_connectivity", "run"],
+        value=False,
+    )
+    multi_set(
+        pipeline.config,
+        index=["network_centrality", "run"],
+        value=False,
+    )
+    multi_set(
+        pipeline.config,
+        index=["longitudinal_template_generation", "run"],
+        value=False,
+    )
+    multi_set(
+        pipeline.config,
+        index=["post_processing", "spatial_smoothing", "run"],
+        value=False,
+    )
+    multi_set(
+        pipeline.config,
+        index=["post_processing", "z-scoring", "run"],
+        value=False,
+    )
+    multi_set(
+        pipeline.config,
+        index=["seed_based_correlation_analysis", "run"],
+        value=False,
+    )
+    multi_set(
+        pipeline.config,
+        index=["PyPEER", "run"],
+        value=False,
+    )
+
     # Set pipeline name
     pipeline.set_name(combi.name(pipeline_num))
 
