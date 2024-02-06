@@ -160,6 +160,24 @@ ConfigLookupTable = Dict[str, PipelineConfig]
 """A dictionary of pipeline name to config"""
 
 
+def _config_deactivate_derivatives(pipeline: PipelineConfig) -> None:
+    """Deactivate all derivatives in a pipeline (except connectomes)"""
+    run_paths: list[MergePath] = [
+        ["amplitude_low_frequency_fluctuation", "run"],
+        ["regional_homogeneity", "run"],
+        ["voxel_mirrored_homotopic_connectivity", "run"],
+        ["network_centrality", "run"],
+        ["longitudinal_template_generation", "run"],
+        ["post_processing", "spatial_smoothing", "run"],
+        ["post_processing", "z-scoring", "run"],
+        ["seed_based_correlation_analysis", "run"],
+        ["PyPEER", "run"],
+    ]
+
+    for run_path in run_paths:
+        multi_set(pipeline.config, index=run_path, value=False)
+
+
 def generate_pipeline_from_combi(
     pipeline_num: int, combi: PipelineCombination, configs: ConfigLookupTable
 ) -> PipelineConfig:
@@ -226,51 +244,7 @@ def generate_pipeline_from_combi(
     )
 
     # Deactivate all other derivatives than connectomes
-    multi_set(
-        pipeline.config,
-        index=["amplitude_low_frequency_fluctuation", "run"],
-        value=False,
-    )
-    multi_set(
-        pipeline.config,
-        index=["regional_homogeneity", "run"],
-        value=False,
-    )
-    multi_set(
-        pipeline.config,
-        index=["voxel_mirrored_homotopic_connectivity", "run"],
-        value=False,
-    )
-    multi_set(
-        pipeline.config,
-        index=["network_centrality", "run"],
-        value=False,
-    )
-    multi_set(
-        pipeline.config,
-        index=["longitudinal_template_generation", "run"],
-        value=False,
-    )
-    multi_set(
-        pipeline.config,
-        index=["post_processing", "spatial_smoothing", "run"],
-        value=False,
-    )
-    multi_set(
-        pipeline.config,
-        index=["post_processing", "z-scoring", "run"],
-        value=False,
-    )
-    multi_set(
-        pipeline.config,
-        index=["seed_based_correlation_analysis", "run"],
-        value=False,
-    )
-    multi_set(
-        pipeline.config,
-        index=["PyPEER", "run"],
-        value=False,
-    )
+    _config_deactivate_derivatives(pipeline)
 
     # Set pipeline name
     pipeline.set_name(combi.name(pipeline_num))
@@ -299,23 +273,37 @@ def main(checkout_sha: str = "1aec64ab4a8474f60bf320173b8e4ac469ca0b07") -> None
     )
 
     # Load pipeline YAMLS
-    configs = {}
+    configs: ConfigLookupTable = {}
     for config_name in PIPELINE_NAMES.keys():
         config_path = dir_configs / (filesafe(config_name) + ".yml")
         pipeline = load_pipeline_config(config_path)
         configs[config_name] = pipeline
         print(f"Loaded pipeline {config_name} from {config_path}")
 
-    # Generate pipelines
+    # Generate "pure" pipelines with derivatives turned off
+    dir_gen = dir_build / "gen192_pure"
+    dir_gen.mkdir(parents=True, exist_ok=True)
+
+    print(f'Generating base pipeline configs in folder "{dir_gen}"')
+
+    for config_name in PIPELINE_NAMES.keys():
+        config = configs[config_name].clone()
+        config.file = dir_gen / f"{config_name}.yml"
+        config.set_name(config_name)
+        _config_deactivate_derivatives(config)
+        config.dump(exist_ok=False)
+        print(f"> Generated pipeline {config_name}")
+
+    # Generate permuted pipelines
     dir_gen = dir_build / "gen192_nofork"
     dir_gen.mkdir(parents=True, exist_ok=True)
 
-    print(f'Generating in folder "{dir_gen}"')
+    print(f'Generating 192 permutations in folder "{dir_gen}"')
 
     for pipeline_num, combi in enumerate(iter_pipeline_combis_no_duplicates()):
         filename = combi.filename(pipeline_num)
 
-        print(f"Generating {filename}")
+        print(f"> Generating {filename}")
 
         combined = generate_pipeline_from_combi(pipeline_num, combi, configs)
         combined.file = dir_gen / filename
