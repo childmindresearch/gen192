@@ -246,6 +246,13 @@ def generate_pipeline_from_combi(
     # Deactivate all other derivatives than connectomes
     _config_deactivate_derivatives(pipeline)
 
+    # Activate Freesurfer ingress
+    multi_set(
+        pipeline.config,
+        index=["surface_analysis", "freesurfer", "ingress_reconall"],
+        value=True,
+    )
+
     # Set pipeline name
     pipeline.set_name(combi.name(pipeline_num))
 
