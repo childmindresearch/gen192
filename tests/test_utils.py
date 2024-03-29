@@ -28,7 +28,7 @@ class TestFileSafe:
             ("hello$world"),
         ],
     )
-    def test_filesafe(self, s: str, expected: str) -> None:
+    def test_filesafe(self, s: str) -> None:
         """Test filesafe function."""
         assert utils.filesafe(s=s) == "hello-world"
 
