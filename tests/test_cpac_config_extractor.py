@@ -8,6 +8,7 @@ import pytest
 
 from gen192 import cpac_config_extractor, utils
 from gen192.cli import PIPELINE_NAMES, load_pipeline_config
+from gen192.config import CPAC_SHA
 
 
 class TestDownloadCPACRepo:
@@ -26,7 +27,7 @@ class TestDownloadCPACRepo:
         assert cmd_exit.value.code == 1
 
     def test_download_cpac_repo_valid(self, tmp_path: pl.Path) -> None:
-        cpac_config_extractor._download_cpac_repo(cpac_dir=tmp_path, checkout_sha="main")
+        cpac_config_extractor._download_cpac_repo(cpac_dir=tmp_path, checkout_sha=CPAC_SHA)
         assert os.path.exists(f"{tmp_path}/CPAC")
 
 
@@ -38,7 +39,7 @@ class TestFetchAndExpandCPACConfig:
         cpac_config_extractor.fetch_and_expand_cpac_configs(
             cpac_dir=cpac_dir,
             output_dir=output_dir,
-            checkout_sha="main",
+            checkout_sha=CPAC_SHA,
             config_names_ids=PIPELINE_NAMES,
         )
 
@@ -59,7 +60,7 @@ class TestCheckCPACConfig:
         cpac_config_extractor.fetch_and_expand_cpac_configs(
             cpac_dir=cpac_dir,
             output_dir=output_dir,
-            checkout_sha="main",
+            checkout_sha=CPAC_SHA,
             config_names_ids=PIPELINE_NAMES,
         )
 
@@ -76,7 +77,7 @@ class TestCheckCPACConfig:
 
         if not (cpac_dir / "CPAC").exists():
             cpac_dir.mkdir(parents=True, exist_ok=True)
-            cpac_config_extractor._download_cpac_repo(cpac_dir=cpac_dir, checkout_sha="main")
+            cpac_config_extractor._download_cpac_repo(cpac_dir=cpac_dir, checkout_sha=CPAC_SHA)
 
         output_dir.mkdir(parents=True, exist_ok=True)
 
