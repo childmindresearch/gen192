@@ -83,6 +83,6 @@ class TestCheckCPACConfig:
         if (cpac_module_path := str(cpac_dir.absolute())) not in sys.path:
             sys.path.append(cpac_module_path)
 
-        ok, err = cpac_config_extractor.check_cpac_config("invalid")
+        ok, err = cpac_config_extractor.check_cpac_config("invalid")  # type: ignore [arg-type]
         assert not ok
         assert err is not None
