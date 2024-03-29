@@ -1,6 +1,7 @@
 """Test gen192.cpac_config_extractor"""
 import os
 import pathlib as pl
+import sys
 from typing import Generator
 
 import pytest
@@ -47,3 +48,26 @@ class TestFetchAndExpandCPACConfig:
         assert os.path.exists(output_dir)
         for config_name in PIPELINE_NAMES:
             assert os.path.exists(output_dir / (utils.filesafe(config_name) + ".yml"))
+
+
+class TestCheckCPACConfig:
+    def test_check_valid_config(self, tmp_path: pl.Path) -> None:
+        ...
+
+    def test_check_invalid_config(self, tmp_path: pl.Path) -> None:
+        # Temporary block to install CPAC if it does not already exist
+        cpac_dir = tmp_path / "cpac_source"
+        output_dir = tmp_path / "cpac_configs"
+
+        if not (cpac_dir / "CPAC").exists():
+            cpac_dir.mkdir(parents=True, exist_ok=True)
+            cpac_config_extractor._download_cpac_repo(cpac_dir=cpac_dir, checkout_sha="main")
+
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        if (cpac_module_path := str(cpac_dir.absolute())) not in sys.path:
+            sys.path.append(cpac_module_path)
+
+        ok, err = cpac_config_extractor.check_cpac_config("invalid")
+        assert not ok
+        assert err is not None
