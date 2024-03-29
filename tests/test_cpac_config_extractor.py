@@ -7,7 +7,7 @@ from typing import Generator
 import pytest
 
 from gen192 import cpac_config_extractor, utils
-from gen192.cli import PIPELINE_NAMES
+from gen192.cli import PIPELINE_NAMES, load_pipeline_config
 
 
 class TestDownloadCPACRepo:
@@ -52,10 +52,25 @@ class TestFetchAndExpandCPACConfig:
 
 class TestCheckCPACConfig:
     def test_check_valid_config(self, tmp_path: pl.Path) -> None:
-        ...
+        cpac_dir = tmp_path / "cpac_source"
+        output_dir = tmp_path / "cpac_configs"
+
+        # Create configs
+        cpac_config_extractor.fetch_and_expand_cpac_configs(
+            cpac_dir=cpac_dir,
+            output_dir=output_dir,
+            checkout_sha="main",
+            config_names_ids=PIPELINE_NAMES,
+        )
+
+        for pipeline_name in PIPELINE_NAMES:
+            pipeline = load_pipeline_config(output_dir / (utils.filesafe(pipeline_name) + ".yml"))
+            valid, msg = cpac_config_extractor.check_cpac_config(pipeline.config)
+            assert valid
+            assert msg is None
 
     def test_check_invalid_config(self, tmp_path: pl.Path) -> None:
-        # Temporary block to install CPAC if it does not already exist
+        # Temporary installation of CPAC package if it does not already exist
         cpac_dir = tmp_path / "cpac_source"
         output_dir = tmp_path / "cpac_configs"
 
