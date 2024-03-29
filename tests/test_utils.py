@@ -70,7 +70,7 @@ class TestMultiGet:
     def test_multi_get_not_dict_type(self) -> None:
         obj: list[Any] = []
         assert not isinstance(obj, dict)
-        assert utils.multi_get(obj=obj, index=["a"]) is None
+        assert utils.multi_get(obj=obj, index=["a"]) is None  # type: ignore [arg-type]
 
     @pytest.mark.parametrize("keys", [(["c"]), (["a", "c"]), (["f"])])
     def test_multi_get_not_in_dict(self, nested_dict: dict[str, str | dict[str, str]], keys: Sequence[Any]) -> None:
@@ -95,7 +95,7 @@ class TestMultiSet:
     def test_multi_set_not_dict_type(self) -> None:
         obj: list[Any] = []
         assert not isinstance(obj, dict)
-        assert not utils.multi_set(obj=obj, index=["a"], value=None)
+        assert not utils.multi_set(obj=obj, index=["a"], value=None)  # type: ignore [arg-type]
 
     @pytest.mark.parametrize("keys", [(["z"]), (["b", "y"])])
     def test_multi_set_valid(self, nested_dict: dict[str, str | dict[str, str]], keys: Sequence[Any]) -> None:
@@ -107,7 +107,7 @@ class TestMultiDel:
     def test_multi_del_not_dict_type(self) -> None:
         obj: list[Any] = []
         assert not isinstance(obj, dict)
-        assert utils.multi_del(obj=obj, index=["a"]) is None
+        assert utils.multi_del(obj=obj, index=["a"]) is None  # type: ignore [arg-type]
 
     @pytest.mark.parametrize("keys", [(["z"]), (["b", "y"])])
     def test_multi_del_not_in_dict(self, nested_dict: dict[str, str | dict[str, str]], keys: Sequence[Any]) -> None:
