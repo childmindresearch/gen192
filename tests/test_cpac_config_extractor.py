@@ -5,7 +5,8 @@ from typing import Generator
 
 import pytest
 
-from gen192 import cpac_config_extractor
+from gen192 import cpac_config_extractor, utils
+from gen192.cli import PIPELINE_NAMES
 
 
 class TestDownloadCPACRepo:
@@ -26,3 +27,23 @@ class TestDownloadCPACRepo:
     def test_download_cpac_repo_valid(self, tmp_path: pl.Path) -> None:
         cpac_config_extractor._download_cpac_repo(cpac_dir=tmp_path, checkout_sha="main")
         assert os.path.exists(f"{tmp_path}/CPAC")
+
+
+class TestFetchAndExpandCPACConfig:
+    def test_fetch_and_expand(self, tmp_path: pl.Path) -> None:
+        cpac_dir = tmp_path / "cpac_source"
+        output_dir = tmp_path / "cpac_configs"
+
+        cpac_config_extractor.fetch_and_expand_cpac_configs(
+            cpac_dir=cpac_dir,
+            output_dir=output_dir,
+            checkout_sha="main",
+            config_names_ids=PIPELINE_NAMES,
+        )
+
+        assert os.path.exists(cpac_dir)
+
+        # Check output configurations exist and correctly named
+        assert os.path.exists(output_dir)
+        for config_name in PIPELINE_NAMES:
+            assert os.path.exists(output_dir / (utils.filesafe(config_name) + ".yml"))
