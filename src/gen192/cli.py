@@ -7,6 +7,7 @@ from typing import Any, Dict, Generator, List
 
 import yaml
 
+from . import config
 from .cpac_config_extractor import check_cpac_config, fetch_and_expand_cpac_configs
 from .utils import aslist, b64_urlsafe_hash, filesafe, multi_del, multi_get, multi_set, print_warning
 
@@ -259,7 +260,7 @@ def generate_pipeline_from_combi(
     return pipeline
 
 
-def main(checkout_sha: str = "555db772c89417b1b478d90f46def966247cc141") -> None:
+def main(checkout_sha: str) -> None:
     """Main entry point for the CLI"""
 
     cpac_version_hash = b64_urlsafe_hash(checkout_sha)
@@ -336,4 +337,4 @@ def main(checkout_sha: str = "555db772c89417b1b478d90f46def966247cc141") -> None
 
 
 if __name__ == "__main__":
-    main()
+    main(checkout_sha=config.CPAC_SHA)
