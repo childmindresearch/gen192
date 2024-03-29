@@ -260,9 +260,10 @@ def generate_pipeline_from_combi(
     return pipeline
 
 
-def main(checkout_sha: str) -> None:
+def main() -> None:
     """Main entry point for the CLI"""
 
+    checkout_sha=config.CPAC_SHA
     cpac_version_hash = b64_urlsafe_hash(checkout_sha)
 
     dir_dist = pl.Path("dist")
@@ -337,4 +338,4 @@ def main(checkout_sha: str) -> None:
 
 
 if __name__ == "__main__":
-    main(checkout_sha=config.CPAC_SHA)
+    main()
