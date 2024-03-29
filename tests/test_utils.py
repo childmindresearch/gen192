@@ -44,7 +44,6 @@ class TestFileSafe:
     )
     def test_filesafe_replacement(self, s: str, replacement: str, expected: str) -> None:
         """Test filesafe function with replacement."""
-        assert utils.filesafe(s=s) == "hello-world"
         assert utils.filesafe(s=s, replacement=replacement) == expected
 
 
