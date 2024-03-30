@@ -1,5 +1,6 @@
 """Test gen192.cli"""
 
+import itertools as it
 import os
 import pathlib as pl
 import random
@@ -107,9 +108,29 @@ class TestPipelineCombination:
 
 
 class TestIterPipelineCombis:
-    # Combine both "all" and "no_duplicate" testing here
-    # TODO: refactor into single function
-    ...
+    @pytest.fixture
+    def expected_combis(self) -> int:
+        return len(
+            list(
+                it.product(
+                    cli.PIPELINE_NAMES,
+                    cli.PIPELINE_NAMES,
+                    cli.PIPELINE_STEPS,
+                    cli.CONNECTIVITY_METHODS,
+                    cli.NUISANCE_METHODS,
+                )
+            )
+        )
+
+    def test_iter_all_combis(self, expected_combis: int) -> None:
+        actual_combis = list(cli.iter_pipeline_combis())
+
+        assert len(actual_combis) == expected_combis
+
+    def test_iter_no_duplicates(self, expected_combis: int) -> None:
+        actual_combis = list(cli.iter_pipeline_combis_no_duplicates())
+
+        assert len(actual_combis) < expected_combis
 
 
 class TestLoadPipelineConfig: ...
