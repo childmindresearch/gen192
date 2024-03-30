@@ -2,6 +2,7 @@
 
 import os
 import pathlib as pl
+import random
 import tempfile
 from typing import Any
 
@@ -9,6 +10,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 import gen192.cli as cli
+from gen192.utils import filesafe
 
 
 class TestPipelineConfig:
@@ -58,7 +60,50 @@ class TestPipelineConfig:
             assert os.path.exists(out_file.name)
 
 
-class TestPipelineCombination: ...
+class TestPipelineCombination:
+    @pytest.fixture()
+    def test_combi(self) -> cli.PipelineCombination:
+        return cli.PipelineCombination(
+            pipeline_id=random.choice(list(cli.PIPELINE_NAMES.keys())),
+            pipeline_perturb_id=random.choice(list(cli.PIPELINE_NAMES.keys())),
+            step=random.choice(cli.PIPELINE_STEPS),
+            connectivity_method=random.choice(cli.CONNECTIVITY_METHODS),
+            use_nuisance_correction=random.choice(cli.NUISANCE_METHODS),
+        )
+
+    def test_init_class(self, test_combi: cli.PipelineCombination) -> None:
+        for var_input, var_type in zip(test_combi.__dict__.values(), [str, str, cli.PipelineStep, str, bool]):
+            assert isinstance(var_input, var_type)
+
+    def test_name(self, test_combi: cli.PipelineCombination) -> None:
+        pipeline_num = random.randint(1, 192)
+        pipeline_name = test_combi.name(pipeline_num=pipeline_num)
+        expected_name = (
+            f"p{pipeline_num:03d}_"
+            f"base-{filesafe(test_combi.pipeline_id)}_"
+            f"perturb-{filesafe(test_combi.pipeline_perturb_id)}_"
+            f"step-{filesafe(test_combi.step.name)}_"
+            f"conn-{filesafe(test_combi.connectivity_method)}_"
+            f"nuisance-{filesafe(str(test_combi.use_nuisance_correction))}"
+        )
+        assert pipeline_name == expected_name
+        assert isinstance(pipeline_name, str)
+
+    def test_filename(self, test_combi: cli.PipelineCombination) -> None:
+        pipeline_num = random.randint(1, 192)
+        expected_name = (
+            f"p{pipeline_num:03d}_"
+            f"base-{filesafe(test_combi.pipeline_id)}_"
+            f"perturb-{filesafe(test_combi.pipeline_perturb_id)}_"
+            f"step-{filesafe(test_combi.step.name)}_"
+            f"conn-{filesafe(test_combi.connectivity_method)}_"
+            f"nuisance-{filesafe(str(test_combi.use_nuisance_correction))}"
+            ".yml"
+        )
+        test_fname = test_combi.filename(pipeline_num)
+
+        assert test_fname == expected_name
+        assert isinstance(test_fname, str)
 
 
 class TestIterPipelineCombis:
