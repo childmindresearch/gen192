@@ -60,6 +60,14 @@ class TestPipelineConfig:
 
             assert os.path.exists(out_file.name)
 
+    def test_dump_notes(self, test_config: cli.PipelineConfig) -> None:
+        test_config.notes = "Hello world"
+        with tempfile.NamedTemporaryFile() as out_file:
+            test_config.file = pl.Path(out_file.name)
+            test_config.dump(exist_ok=True)
+
+        assert os.path.exists(f"{test_config.file}.notes.txt")
+
 
 class TestPipelineCombination:
     @pytest.fixture()
