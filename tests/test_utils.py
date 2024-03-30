@@ -1,4 +1,5 @@
 """Test gen192.utils"""
+
 import os
 import pathlib as pl
 import string

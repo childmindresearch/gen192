@@ -1,4 +1,5 @@
 """Test gen192.cpac_config_extractor"""
+
 import os
 import pathlib as pl
 import sys
