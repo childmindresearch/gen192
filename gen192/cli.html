@@ -424,7 +424,7 @@
 </span><span id="L-263"><a href="#L-263"><span class="linenos">263</span></a><span class="k">def</span> <span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 </span><span id="L-264"><a href="#L-264"><span class="linenos">264</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Main entry point for the CLI&quot;&quot;&quot;</span>
 </span><span id="L-265"><a href="#L-265"><span class="linenos">265</span></a>
-</span><span id="L-266"><a href="#L-266"><span class="linenos">266</span></a>    <span class="n">checkout_sha</span><span class="o">=</span><span class="n">CPAC_SHA</span>
+</span><span id="L-266"><a href="#L-266"><span class="linenos">266</span></a>    <span class="n">checkout_sha</span> <span class="o">=</span> <span class="n">CPAC_SHA</span>
 </span><span id="L-267"><a href="#L-267"><span class="linenos">267</span></a>    <span class="n">cpac_version_hash</span> <span class="o">=</span> <span class="n">b64_urlsafe_hash</span><span class="p">(</span><span class="n">checkout_sha</span><span class="p">)</span>
 </span><span id="L-268"><a href="#L-268"><span class="linenos">268</span></a>
 </span><span id="L-269"><a href="#L-269"><span class="linenos">269</span></a>    <span class="n">dir_dist</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;dist&quot;</span><span class="p">)</span>
@@ -1165,7 +1165,7 @@
             <div class="pdoc-code codehilite"><pre><span></span><span id="main-264"><a href="#main-264"><span class="linenos">264</span></a><span class="k">def</span> <span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 </span><span id="main-265"><a href="#main-265"><span class="linenos">265</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Main entry point for the CLI&quot;&quot;&quot;</span>
 </span><span id="main-266"><a href="#main-266"><span class="linenos">266</span></a>
-</span><span id="main-267"><a href="#main-267"><span class="linenos">267</span></a>    <span class="n">checkout_sha</span><span class="o">=</span><span class="n">CPAC_SHA</span>
+</span><span id="main-267"><a href="#main-267"><span class="linenos">267</span></a>    <span class="n">checkout_sha</span> <span class="o">=</span> <span class="n">CPAC_SHA</span>
 </span><span id="main-268"><a href="#main-268"><span class="linenos">268</span></a>    <span class="n">cpac_version_hash</span> <span class="o">=</span> <span class="n">b64_urlsafe_hash</span><span class="p">(</span><span class="n">checkout_sha</span><span class="p">)</span>
 </span><span id="main-269"><a href="#main-269"><span class="linenos">269</span></a>
 </span><span id="main-270"><a href="#main-270"><span class="linenos">270</span></a>    <span class="n">dir_dist</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;dist&quot;</span><span class="p">)</span>
