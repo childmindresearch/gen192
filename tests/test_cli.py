@@ -43,13 +43,10 @@ class TestPipelineConfig:
         assert test_config.config["pipeline_setup"]["pipeline_name"] == new_name
 
     def test_dump_file_exists_error(self, test_config: cli.PipelineConfig, mocker: MockerFixture) -> None:
-        mocker.patch.object(
-            test_config,
-            "dump",
-            side_effect=FileExistsError(f"File {test_config.file} already exists"),
-        )
-        with pytest.raises(FileExistsError, match="already exists"):
-            test_config.dump(exist_ok=False)
+        with mocker.patch("builtins.open", side_effect=FileExistsError("File already exists")):
+            mocker.patch.object(test_config, "_file_exists", return_value=True)
+            with pytest.raises(FileExistsError, match="already exists"):
+                test_config.dump(exist_ok=False)
 
     @pytest.mark.parametrize("exist_ok", [(True), (False)])
     def test_dump_file_valid(self, test_config: cli.PipelineConfig, exist_ok: bool) -> None:

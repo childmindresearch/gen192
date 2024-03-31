@@ -99,8 +99,11 @@ class PipelineConfig:
         self.name = name
         self.config["pipeline_setup"]["pipeline_name"] = name
 
+    def _file_exists(self) -> bool:
+        return self.file.exists()
+
     def dump(self, exist_ok: bool = False) -> None:
-        if self.file.exists() and not exist_ok:
+        if self._file_exists() and not exist_ok:
             raise FileExistsError(f"File {self.file} already exists")
         with open(self.file, "w") as handle:
             yaml.dump(self.config, handle)
