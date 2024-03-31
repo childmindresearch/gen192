@@ -141,7 +141,17 @@ class TestIterPipelineCombis:
         assert len(actual_combis) < expected_combis
 
 
-class TestLoadPipelineConfig: ...
+class TestLoadPipelineConfig:
+    def test_load_pipeline_config(self, test_config: cli.PipelineConfig) -> None:
+        with tempfile.NamedTemporaryFile() as tmp_file:
+            test_config.file = pl.Path(tmp_file.name)
+            test_config.dump(exist_ok=True)
+
+            new_config = cli.load_pipeline_config(pl.Path(tmp_file.name))
+            assert isinstance(new_config, cli.PipelineConfig)
+            assert new_config.name == test_config.name
+            assert new_config.file == test_config.file
+            assert new_config.config == test_config.config
 
 
 class TestGeneratePipelineFromCombi: ...
