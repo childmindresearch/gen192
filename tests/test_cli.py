@@ -4,6 +4,7 @@ import itertools as it
 import os
 import pathlib as pl
 import random
+import shutil
 import tempfile
 from typing import Any, Generator
 
@@ -108,7 +109,7 @@ class TestPipelineCombination:
         pipeline_num = random.randint(1, 192)
         test_fname = test_combi.filename(pipeline_num)
 
-        assert test_fname == f"p{pipeline_num:03d}_{test_combi_name}"
+        assert test_fname == f"p{pipeline_num:03d}_{test_combi_name}.yml"
         assert isinstance(test_fname, str)
 
 
@@ -157,7 +158,7 @@ def test_configs(test_config: cli.PipelineConfig) -> cli.ConfigLookupTable:
 
 
 class TestGeneratePipelineFromCombi:
-    def test_generate_pipeline_w_warnings(
+    def test_generate_pipeline_from_combi_w_warnings(
         self,
         test_combi: cli.PipelineCombination,
         test_configs: cli.ConfigLookupTable,
@@ -177,5 +178,17 @@ class TestGeneratePipelineFromCombi:
 
 
 class TestMain:
-    # Test for entry point / end-to-end run
-    ...
+    def test_main(self, capsys: Generator[pytest.CaptureFixture[str], None, None]) -> None:
+        # Remove existing distribution dirs for testing
+        if os.path.exists("build"):
+            shutil.rmtree("build")
+        cli.main()
+        captured = capsys.readouterr().out  # type: ignore
+        for msg in [
+            "Loaded pipeline",
+            "Generating base pipeline",
+            "Generated pipeline",
+            "Generating 192 permutations",
+            "> Generating",
+        ]:
+            assert msg in captured
