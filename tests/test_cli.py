@@ -69,49 +69,46 @@ class TestPipelineConfig:
         assert os.path.exists(f"{test_config.file}.notes.txt")
 
 
-class TestPipelineCombination:
-    @pytest.fixture()
-    def test_combi(self) -> cli.PipelineCombination:
-        return cli.PipelineCombination(
-            pipeline_id=random.choice(list(cli.PIPELINE_NAMES.keys())),
-            pipeline_perturb_id=random.choice(list(cli.PIPELINE_NAMES.keys())),
-            step=random.choice(cli.PIPELINE_STEPS),
-            connectivity_method=random.choice(cli.CONNECTIVITY_METHODS),
-            use_nuisance_correction=random.choice(cli.NUISANCE_METHODS),
-        )
+@pytest.fixture()
+def test_combi() -> cli.PipelineCombination:
+    pipeline_step = cli.PipelineStep(name="TestPipeline", merge_paths=[["path1", "path2"]])
 
+    return cli.PipelineCombination(
+        pipeline_id="1",
+        pipeline_perturb_id="2",
+        step=pipeline_step,
+        connectivity_method="connectivity_method1",
+        use_nuisance_correction=True,
+    )
+
+
+@pytest.fixture()
+def test_combi_name(test_combi: cli.PipelineCombination) -> str:
+    return (
+        f"base-{filesafe(test_combi.pipeline_id)}_"
+        f"perturb-{filesafe(test_combi.pipeline_perturb_id)}_"
+        f"step-{filesafe(test_combi.step.name)}_"
+        f"conn-{filesafe(test_combi.connectivity_method)}_"
+        f"nuisance-{filesafe(str(test_combi.use_nuisance_correction))}"
+    )
+
+
+class TestPipelineCombination:
     def test_init_class(self, test_combi: cli.PipelineCombination) -> None:
         for var_input, var_type in zip(test_combi.__dict__.values(), [str, str, cli.PipelineStep, str, bool]):
             assert isinstance(var_input, var_type)
 
-    def test_name(self, test_combi: cli.PipelineCombination) -> None:
+    def test_name(self, test_combi: cli.PipelineCombination, test_combi_name: str) -> None:
         pipeline_num = random.randint(1, 192)
         pipeline_name = test_combi.name(pipeline_num=pipeline_num)
-        expected_name = (
-            f"p{pipeline_num:03d}_"
-            f"base-{filesafe(test_combi.pipeline_id)}_"
-            f"perturb-{filesafe(test_combi.pipeline_perturb_id)}_"
-            f"step-{filesafe(test_combi.step.name)}_"
-            f"conn-{filesafe(test_combi.connectivity_method)}_"
-            f"nuisance-{filesafe(str(test_combi.use_nuisance_correction))}"
-        )
-        assert pipeline_name == expected_name
+        assert pipeline_name == f"p{pipeline_num:03d}_{test_combi_name}"
         assert isinstance(pipeline_name, str)
 
-    def test_filename(self, test_combi: cli.PipelineCombination) -> None:
+    def test_filename(self, test_combi: cli.PipelineCombination, test_combi_name: str) -> None:
         pipeline_num = random.randint(1, 192)
-        expected_name = (
-            f"p{pipeline_num:03d}_"
-            f"base-{filesafe(test_combi.pipeline_id)}_"
-            f"perturb-{filesafe(test_combi.pipeline_perturb_id)}_"
-            f"step-{filesafe(test_combi.step.name)}_"
-            f"conn-{filesafe(test_combi.connectivity_method)}_"
-            f"nuisance-{filesafe(str(test_combi.use_nuisance_correction))}"
-            ".yml"
-        )
         test_fname = test_combi.filename(pipeline_num)
 
-        assert test_fname == expected_name
+        assert test_fname == f"p{pipeline_num:03d}_{test_combi_name}"
         assert isinstance(test_fname, str)
 
 
@@ -152,9 +149,6 @@ class TestLoadPipelineConfig:
             assert new_config.name == test_config.name
             assert new_config.file == test_config.file
             assert new_config.config == test_config.config
-
-
-class TestGeneratePipelineFromCombi: ...
 
 
 class TestMain:
