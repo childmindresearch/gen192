@@ -5,7 +5,7 @@ import os
 import pathlib as pl
 import random
 import tempfile
-from typing import Any
+from typing import Any, Generator
 
 import pytest
 from pytest_mock import MockerFixture
@@ -149,6 +149,31 @@ class TestLoadPipelineConfig:
             assert new_config.name == test_config.name
             assert new_config.file == test_config.file
             assert new_config.config == test_config.config
+
+
+@pytest.fixture
+def test_configs(test_config: cli.PipelineConfig) -> cli.ConfigLookupTable:
+    return {"1": test_config, "2": test_config}
+
+
+class TestGeneratePipelineFromCombi:
+    def test_generate_pipeline_w_warnings(
+        self,
+        test_combi: cli.PipelineCombination,
+        test_configs: cli.ConfigLookupTable,
+        capsys: Generator[pytest.CaptureFixture[str], None, None],
+    ) -> None:
+        # Change merge path in one config to
+        pipeline = cli.generate_pipeline_from_combi(
+            1,
+            combi=test_combi,
+            configs=test_configs,
+        )
+        captured = capsys.readouterr().out  # type: ignore
+        assert "Can't find path" in captured
+        assert "identical to target" in captured
+
+        assert isinstance(pipeline, cli.PipelineConfig)
 
 
 class TestMain:
