@@ -9,7 +9,15 @@ import yaml
 
 from .config import CPAC_SHA
 from .cpac_config_extractor import check_cpac_config, fetch_and_expand_cpac_configs
-from .utils import aslist, b64_urlsafe_hash, filesafe, multi_del, multi_get, multi_set, print_warning
+from .utils import (
+    aslist,
+    b64_urlsafe_hash,
+    filesafe,
+    multi_del,
+    multi_get,
+    multi_set,
+    print_warning,
+)
 
 PIPELINE_NAMES = {
     "ABCD": "abcd-options",
@@ -50,7 +58,11 @@ PIPELINE_STEPS: List[PipelineStep] = [
         name="Functional Masking",
         merge_paths=[
             ["functional_preproc", "func_masking"],
-            ["registration_workflows", "anatomical_registration", "T1w_brain_template_mask"],
+            [
+                "registration_workflows",
+                "anatomical_registration",
+                "T1w_brain_template_mask",
+            ],
             [
                 "registration_workflows",
                 "functional_registration",
@@ -87,8 +99,11 @@ class PipelineConfig:
         self.name = name
         self.config["pipeline_setup"]["pipeline_name"] = name
 
+    def _file_exists(self) -> bool:
+        return self.file.exists()
+
     def dump(self, exist_ok: bool = False) -> None:
-        if self.file.exists() and not exist_ok:
+        if self._file_exists() and not exist_ok:
             raise FileExistsError(f"File {self.file} already exists")
         with open(self.file, "w") as handle:
             yaml.dump(self.config, handle)
@@ -193,7 +208,7 @@ def generate_pipeline_from_combi(
         snippet_target = multi_get(pipeline.config, index=merge_path)
 
         if snippet is None:
-            warning = f"Cant find path {merge_path} in {pipeline_perturb.name}"
+            warning = f"Can't find path {merge_path} in {pipeline_perturb.name}"
             pipeline.notes = pipeline.notes + "\n" + warning if pipeline.notes else warning
             print_warning(warning)
             multi_del(pipeline.config, index=merge_path)
