@@ -196,7 +196,9 @@ def _config_deactivate_derivatives(pipeline: PipelineConfig) -> None:
 
 def _config_remove_coregistration_reference(pipeline: PipelineConfig) -> None:
     """Remove coregistration reference entry from a pipeline config"""
-    multi_del(pipeline.config, index=["registration_workflows", "functional_registration", "coregistration_ref"])
+    multi_del(
+        pipeline.config, index=["registration_workflows", "functional_registration", "coregistration", "reference"]
+    )
 
 
 def generate_pipeline_from_combi(
