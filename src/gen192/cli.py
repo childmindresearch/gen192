@@ -194,6 +194,11 @@ def _config_deactivate_derivatives(pipeline: PipelineConfig) -> None:
         multi_set(pipeline.config, index=run_path, value=False)
 
 
+def _config_remove_coregistration_reference(pipeline: PipelineConfig) -> None:
+    """Remove coregistration reference entry from a pipeline config"""
+    multi_del(pipeline.config, index=["registration_workflows", "functional_registration", "coregistration_ref"])
+
+
 def generate_pipeline_from_combi(
     pipeline_num: int, combi: PipelineCombination, configs: ConfigLookupTable
 ) -> PipelineConfig:
@@ -261,6 +266,11 @@ def generate_pipeline_from_combi(
 
     # Deactivate all other derivatives than connectomes
     _config_deactivate_derivatives(pipeline)
+
+    # Remove coregistration reference
+    # Was told by CPAC member to remove it
+    # This field will be removed from CPAC in the future
+    _config_remove_coregistration_reference(pipeline)
 
     # Activate Freesurfer ingress
     multi_set(
