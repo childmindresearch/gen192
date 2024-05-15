@@ -1,3 +1,3 @@
 """Configuration for the gen192 package."""
 
-CPAC_SHA = "d6785be66ca995e49c1c85dcf0b33303a509c125"
+CPAC_SHA = "dc41bf4f94da07dd78aeaf2fb894e11999f34748"
