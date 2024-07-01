@@ -11,7 +11,7 @@ packages = [{include = "gen192", from = "src"}]
 python = "^3.10"
 pyyaml = "^6.0.1"
 nipype = "^1.8.6"  # for cpac config expansion
-voluptuous = "^0.14.2"  # for cpac config expansion
+voluptuous = "^0.15.1"  # for cpac config expansion
 pathvalidate = "^3.2.0"  # for cpac config expansion
 yamlordereddictloader = "^0.4.2"
 
