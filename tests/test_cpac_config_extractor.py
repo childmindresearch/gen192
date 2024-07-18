@@ -24,7 +24,7 @@ class TestDownloadCPACRepo:
             captured = capsys.readouterr().out  # type: ignore
             assert "Could not checkout" in captured
 
-        assert cmd_exit.type == SystemExit
+        assert cmd_exit.type == SystemExit  # noqa: E721
         assert cmd_exit.value.code == 1
 
     def test_download_cpac_repo_valid(self, tmp_path: pl.Path) -> None:
