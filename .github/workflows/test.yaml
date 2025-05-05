@@ -11,8 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - name: Setup venv
-      uses: ./.github/actions/setup-venv
+    - uses: astral-sh/setup-uv@v5
     - name: Run tests
       id: run-tests
       run: >
@@ -33,10 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - name: Setup venv
-      uses: ./.github/actions/setup-venv
-      with:
-        only-dev: true
+    - uses: astral-sh/setup-uv@v5
     - name: Ruff format
       run: uv run ruff format --check
     - name: Ruff check
@@ -46,8 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - name: Setup venv
-      uses: ./.github/actions/setup-venv
+    - uses: astral-sh/setup-uv@v5
     - run: |
         uv run mypy .
 
@@ -55,7 +50,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - name: Setup venv
-      uses: ./.github/actions/setup-venv
+    - uses: astral-sh/setup-uv@v5
     - run: |-
         uv run deptry ./src
