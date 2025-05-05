@@ -1,40 +1,42 @@
-[tool.poetry]
+[project]
+authors = [
+  {name = "CMI DAIR", email = "dair@childmind.org"}
+]
+license = "LGPL-2.1"
+requires-python = ">=3.10"
 name = "gen192"
 version = "0.1.0"
 description = "A beautiful description."
-authors = ["Florian Rupprecht <florian.rupprecht@childmind.org>"]
-license = "LGPL-2.1"
 readme = "README.md"
-packages = [{include = "gen192", from = "src"}]
+dependencies = [
+  "pyyaml>=6.0.1",
+  "nipype==1.8.6",  # for cpac config expansion
+  "voluptuous==0.14.2",  # for cpac config expansion
+  "pathvalidate==3.2.0",  # for cpac config expansion
+  "yamlordereddictloader==0.4.2",  # for cpac config expansion
+  "setuptools==69.5.1",  # for cpac config expansion
+  "traits==6.3.2"  # for cpac config expansion
+]
 
-[tool.poetry.dependencies]
-python = "^3.10"
-pyyaml = "^6.0.1"
-nipype = "^1.8.6"  # for cpac config expansion
-voluptuous = "0.14.2"  # for cpac config expansion
-pathvalidate = "^3.2.0"  # for cpac config expansion
-yamlordereddictloader = "^0.4.2"
-setuptools = "69.5.1"
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.2.2"
-mypy = "^1.10.1"
-pre-commit = "^3.7.1"
-pytest-cov = "^5.0.0"
-ruff = "^0.5.3"
-types-pyyaml = "^6.0.12.20240311"
-pytest-mock = "^3.14.0"
-
-[tool.poetry.group.docs.dependencies]
-pdoc = "^14.5.1"
-
-[tool.poetry.scripts]
+[project.scripts]
 gen192 = "gen192.cli:main"
+
+[dependency-groups]
+dev = [
+  "pytest>=8.3.4",
+  "mypy>=1.13.0",
+  "pre-commit>=4.0.1",
+  "pytest-cov>=6.0.0",
+  "ruff>=0.8.1",
+  "types-pyyaml>=6.0.12.20250402"
+]
+docs = ["pdoc>=15.0.0"]
 
 [tool.pytest.ini_options]
 pythonpath = [
   "src"
 ]
+testpaths = ["tests"]
 
 [tool.mypy]
 ignore_missing_imports = true
@@ -43,29 +45,6 @@ exclude = [
 ]
 
 [tool.ruff]
-exclude = [
-  ".bzr",
-  ".direnv",
-  ".eggs",
-  ".git",
-  ".git-rewrite",
-  ".hg",
-  ".mypy_cache",
-  ".nox",
-  ".pants.d",
-  ".pytype",
-  ".ruff_cache",
-  ".svn",
-  ".tox",
-  ".venv",
-  "__pypackages__",
-  "_build",
-  "buck-out",
-  "build",
-  "dist",
-  "node_modules",
-  "venv"
-]
 line-length = 120
 indent-width = 4
 src = ["src"]
@@ -74,12 +53,10 @@ target-version = "py311"
 [tool.ruff.lint]
 select = ["ANN", "E", "F", "I"]
 ignore = [
-  "ANN101",  # self should not be annotated.
-  "ANN102"  # cls should not be annotated.
+  "E712"  # Avoid equality comparisons to `True`;
 ]
 fixable = ["ALL"]
 unfixable = []
-dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -87,12 +64,6 @@ convention = "google"
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = []
 
-[tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
-skip-magic-trailing-comma = false
-line-ending = "auto"
-
 [build-system]
-requires = ["poetry-core>=1.2.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
