@@ -1,3 +1,4 @@
+import argparse
 import copy
 import json
 import pathlib as pl
@@ -119,8 +120,8 @@ class PipelineCombination:
     pipeline_id: str
     pipeline_perturb_id: str
     step: PipelineStep
-    connectivity_method: str
-    use_nuisance_correction: bool
+    # connectivity_method: str
+    # use_nuisance_correction: bool
 
     def name(self, pipeline_num: int) -> str:
         return (
@@ -128,8 +129,8 @@ class PipelineCombination:
             f"base-{filesafe(self.pipeline_id)}_"
             f"perturb-{filesafe(self.pipeline_perturb_id)}_"
             f"step-{filesafe(self.step.name)}_"
-            f"conn-{filesafe(self.connectivity_method)}_"
-            f"nuisance-{filesafe(str(self.use_nuisance_correction))}"
+            # f"conn-{filesafe(self.connectivity_method)}_"
+            # f"nuisance-{filesafe(str(self.use_nuisance_correction))}"
         )
 
     def filename(self, pipeline_num: int) -> str:
@@ -143,15 +144,15 @@ def iter_pipeline_combis() -> Generator[PipelineCombination, Any, None]:
     for pipeline_id in PIPELINE_NAMES.keys():
         for pipeline_perturb_id in PIPELINE_NAMES.keys():
             for step in PIPELINE_STEPS:
-                for connectivity_method in CONNECTIVITY_METHODS:
-                    for nuisance_method in NUISANCE_METHODS:
-                        yield PipelineCombination(
-                            pipeline_id=pipeline_id,
-                            pipeline_perturb_id=pipeline_perturb_id,
-                            step=step,
-                            connectivity_method=connectivity_method,
-                            use_nuisance_correction=nuisance_method,
-                        )
+                # for connectivity_method in CONNECTIVITY_METHODS:
+                #for nuisance_method in NUISANCE_METHODS:
+                yield PipelineCombination(
+                    pipeline_id=pipeline_id,
+                    pipeline_perturb_id=pipeline_perturb_id,
+                    step=step,
+                    # connectivity_method=connectivity_method,
+                    # use_nuisance_correction=nuisance_method,
+                )
 
 
 def iter_pipeline_combis_no_duplicates() -> Generator[PipelineCombination, Any, None]:
@@ -241,11 +242,11 @@ def generate_pipeline_from_combi(
         index=["timeseries_extraction", "run"],
         value=True,
     )
-    multi_set(
-        pipeline.config,
-        index=["timeseries_extraction", "connectivity_matrix", "using"],
-        value=aslist(combi.connectivity_method),
-    )
+    # multi_set(
+    #    pipeline.config,
+    #    index=["timeseries_extraction", "connectivity_matrix", "using"],
+    #    value=aslist(combi.connectivity_method),
+    # )
     multi_set(
         pipeline.config,
         index=["timeseries_extraction", "connectivity_matrix", "measure"],
@@ -253,18 +254,18 @@ def generate_pipeline_from_combi(
     )
 
     # Set nuisance method
-    # Using regressors for calculations
-    multi_set(
-        pipeline.config,
-        index=["nuisance_corrections", "2-nuisance_regression", "run"],
-        value=aslist(combi.use_nuisance_correction),
-    )
-    # Generating regressors (opposed to ingressing them)
-    multi_set(
-        pipeline.config,
-        index=["nuisance_corrections", "2-nuisance_regression", "create_regressors"],
-        value=combi.use_nuisance_correction,
-    )
+    # # Using regressors for calculations
+    # multi_set(
+    #     pipeline.config,
+    #     index=["nuisance_corrections", "2-nuisance_regression", "run"],
+    #     value=aslist(combi.use_nuisance_correction),
+    # )
+    # # Generating regressors (opposed to ingressing them)
+    # multi_set(
+    #     pipeline.config,
+    #     index=["nuisance_corrections", "2-nuisance_regression", "create_regressors"],
+    #     value=combi.use_nuisance_correction,
+    # )
 
     # Deactivate all other derivatives than connectomes
     _config_deactivate_derivatives(pipeline)
@@ -281,14 +282,47 @@ def generate_pipeline_from_combi(
         value=True,
     )
 
+    # Dont run Freesurfer recon_all
+    multi_set(
+        pipeline.config,
+        index=["surface_analysis", "freesurfer", "run_reconall"],
+        value=False,
+    )
+
+    # Dont run any connectivity stuff
+    multi_del(
+        pipeline.config,
+        index=["timeseries_extraction", "connectivity_matrix"],
+    )
+
+    # Hardcode freesurfer ingress dir
+    multi_set(
+        pipeline.config,
+        index=["pipeline_setup", "freesurfer_dir"],
+        value="/ocean/projects/med220004p/trogers1/many_pipelines/freesurfer/outputs/ABCD_all_subjects",
+    )
+
     # Set pipeline name
     pipeline.set_name(combi.name(pipeline_num))
 
     return pipeline
 
 
-def main() -> None:
+def main(force=False) -> None:
     """Main entry point for the CLI"""
+
+    # Delete build and dist directories if force is True
+    if force:
+        dir_dist = pl.Path("dist")
+        dir_build = pl.Path("build")
+        
+        if dir_dist.exists():
+            print(f"Force option enabled: Removing {dir_dist}")
+            shutil.rmtree(dir_dist)
+            
+        if dir_build.exists():
+            print(f"Force option enabled: Removing {dir_build}")
+            shutil.rmtree(dir_build)
 
     checkout_sha = CPAC_SHA
     cpac_version_hash = b64_urlsafe_hash(checkout_sha)
@@ -342,6 +376,159 @@ def main() -> None:
         print(f"> Generating {filename}")
 
         combined = generate_pipeline_from_combi(pipeline_num, combi, configs)
+
+        if (
+            combi.pipeline_id == "ABCD"
+            and combi.pipeline_perturb_id == "CCS"
+            and combi.step.name == "Functional Registration"
+        ) or (
+            combi.pipeline_id == "CCS"
+            and combi.pipeline_perturb_id == "ABCD"
+            and combi.step.name == "Functional Masking"
+        ):
+            # See text related to search term "apply_func_mask_in_native_space: false" in
+            # https://docs.google.com/document/d/1WyARU5wkkAd9VrT24Tc7xJWJf7CIGO29PY0IM4tdGgQ/edit?tab=t.0
+            # todo: sanity check
+            multi_set(
+                combined.config,
+                index=["functional_preproc", "func_masking", "apply_func_mask_in_native_space"],
+                value=True,
+            )
+
+        # if (
+        #     combi.pipeline_id == "CCS"
+        #     and combi.pipeline_perturb_id == "ABCD"
+        #     and combi.step.name == "Functional Masking"
+        #     #and combi.use_nuisance_correction == True
+        # ):
+        #     # See text related to search term "use_priors" and "lateral_ventricles_mask" in
+        #     # https://docs.google.com/document/d/1WyARU5wkkAd9VrT24Tc7xJWJf7CIGO29PY0IM4tdGgQ/edit?tab=t.0
+        #     # todo: sanity check
+        #     multi_set(
+        #         combined.config,
+        #         index=["segmentation", "tissue_segmentation", "FSL-FAST", "use_priors", "run"],
+        #         value=False,
+        #     )
+        #     multi_set(
+        #         combined.config,
+        #         index=["nuisance_corrections", "2-nuisance_regrtession", "lateral_ventricles_mask"],
+        #         value=None,
+        #     )
+
+        if (
+            combi.pipeline_id == "ABCD"
+            and combi.pipeline_perturb_id == "RBC"
+            and combi.step.name == "Structural Registration"
+        ):
+            # See text related to search term "overwrite transform" in
+            # https://docs.google.com/document/d/1WyARU5wkkAd9VrT24Tc7xJWJf7CIGO29PY0IM4tdGgQ/edit?tab=t.0
+            # todo: sanity check
+            multi_set(
+                combined.config,
+                index=["registration_workflows", "anatomical_registration", "overwrite_transform", "run"],
+                value=True,
+            )
+
+        if (
+            (
+                combi.pipeline_id == "ABCD"
+                and combi.pipeline_perturb_id == "RBC"
+                and combi.step.name == "Functional Registration"
+            )
+            or (
+                combi.pipeline_id == "ABCD"
+                and combi.pipeline_perturb_id == "fMRIPrep"
+                and combi.step.name == "Functional Registration"
+            )
+            or (
+                combi.pipeline_id == "RBC"
+                and combi.pipeline_perturb_id == "ABCD"
+                and combi.step.name == "Functional Masking"
+            )
+        ):
+            # See text related to search term "Anatomical_Resampled to CCS_Anatomical_Refined" in
+            # https://docs.google.com/document/d/1WyARU5wkkAd9VrT24Tc7xJWJf7CIGO29PY0IM4tdGgQ/edit?tab=t.0
+            # todo: sanity check
+            multi_set(
+                combined.config,
+                index=["functional_preproc", "func_masking", "using"],
+                value=["CCS_Anatomical_Refined"],  # string list, change from ["Anatomical_Resampled"]
+            )
+
+        if (
+            combi.pipeline_id == "ABCD"
+            and combi.pipeline_perturb_id == "fMRIPrep"
+            and combi.step.name == "Structural Registration"
+        ) or (
+            combi.pipeline_id == "CCS"
+            and combi.pipeline_perturb_id == "ABCD"
+            and combi.step.name == "Structural Masking"
+        ):
+            # See text related to search term "registration: using: ANTS" in
+            # https://docs.google.com/document/d/1WyARU5wkkAd9VrT24Tc7xJWJf7CIGO29PY0IM4tdGgQ/edit?tab=t.0
+            # todo: sanity check
+            multi_set(
+                combined.config,
+                index=["registration_workflows", "anatomical_registration", "registration", "using"],
+                value=["FSL"],  # string list, change from ["ANTS"]
+            )
+            multi_set(
+                combined.config,
+                index=["registration_workflows", "anatomical_registration", "overwrite_transform", "run"],
+                value=True,
+            )
+
+        if (
+            combi.pipeline_id == "RBC"
+            and combi.pipeline_perturb_id == "ABCD"
+            and combi.step.name == "Functional Masking"
+        ) and (
+            combi.pipeline_id == "fMRIPrep"
+            and combi.pipeline_perturb_id == "ABCD"
+            and combi.step.name == "Structural Masking"
+        ):
+            # See text related to search term "overwrite transform" in
+            # https://docs.google.com/document/d/1WyARU5wkkAd9VrT24Tc7xJWJf7CIGO29PY0IM4tdGgQ/edit?tab=t.0
+            # todo: sanity check
+            multi_set(
+                combined.config,
+                index=["registration_workflows", "anatomical_registration", "overwrite_transform", "run"],
+                value=True,
+            )
+
+        if (
+            combi.pipeline_id == "RBC"
+            and combi.pipeline_perturb_id == "CCS"
+            and combi.step.name == "Structural Registration"
+        ):
+            # See text related to search term "overwrite transform" in
+            # https://docs.google.com/document/d/1WyARU5wkkAd9VrT24Tc7xJWJf7CIGO29PY0IM4tdGgQ/edit?tab=t.0
+            # todo: sanity check
+            multi_set(
+                combined.config,
+                index=["registration_workflows", "anatomical_registration", "registration", "using"],
+                value=["ANTS"],  # string list, change from ["FSL"]
+            )
+
+        if (
+            combi.pipeline_id == "fMRIPrep"
+            and combi.pipeline_perturb_id == "CCS"
+            and combi.step.name == "Structural Registration"
+        ) and (
+            combi.pipeline_id == "RBC"
+            and combi.pipeline_perturb_id == "CCS"
+            and combi.step.name == "Structural Registration"
+        ):
+            multi_del(
+                combined.config,
+                index=["registration_workflows", "anatomical_registration", "overwrite_transform", "using"],
+            )
+            multi_set(
+                combined.config,
+                index=["registration_workflows", "anatomical_registration", "registration", "using"],
+                value=["ANTS"],  # string list, change from ["FSL"]
+            )
+
         combined.file = dir_gen / filename
 
         # Let CPAC check if it is a valid config
@@ -364,5 +551,13 @@ def main() -> None:
             )
 
 
+def cli():
+    parser = argparse.ArgumentParser(description="Your script description")
+    parser.add_argument("-f", "--force", action="store_true", help="Force execution without prompts")
+    args = parser.parse_args()
+    
+    main(force=args.force)
+
+
 if __name__ == "__main__":
-    main()
+    cli()

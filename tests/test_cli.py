@@ -75,7 +75,7 @@ def test_combi() -> cli.PipelineCombination:
         pipeline_id="1",
         pipeline_perturb_id="2",
         step=pipeline_step,
-        connectivity_method="connectivity_method1",
+        # connectivity_method="connectivity_method1",
         use_nuisance_correction=True,
     )
 
@@ -86,7 +86,7 @@ def test_combi_name(test_combi: cli.PipelineCombination) -> str:
         f"base-{filesafe(test_combi.pipeline_id)}_"
         f"perturb-{filesafe(test_combi.pipeline_perturb_id)}_"
         f"step-{filesafe(test_combi.step.name)}_"
-        f"conn-{filesafe(test_combi.connectivity_method)}_"
+        # f"conn-{filesafe(test_combi.connectivity_method)}_"
         f"nuisance-{filesafe(str(test_combi.use_nuisance_correction))}"
     )
 

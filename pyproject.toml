@@ -19,7 +19,7 @@ dependencies = [
 ]
 
 [project.scripts]
-gen192 = "gen192.cli:main"
+gen192 = "gen192.cli:cli"
 
 [dependency-groups]
 dev = [
@@ -28,7 +28,8 @@ dev = [
   "pre-commit>=4.0.1",
   "pytest-cov>=6.0.0",
   "ruff>=0.8.1",
-  "types-pyyaml>=6.0.12.20250402"
+  "types-pyyaml>=6.0.12.20250402",
+  "pytest-mock>=3.14.0",
 ]
 docs = ["pdoc>=15.0.0"]
 
