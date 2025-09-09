@@ -145,7 +145,7 @@ def iter_pipeline_combis() -> Generator[PipelineCombination, Any, None]:
         for pipeline_perturb_id in PIPELINE_NAMES.keys():
             for step in PIPELINE_STEPS:
                 # for connectivity_method in CONNECTIVITY_METHODS:
-                #for nuisance_method in NUISANCE_METHODS:
+                # for nuisance_method in NUISANCE_METHODS:
                 yield PipelineCombination(
                     pipeline_id=pipeline_id,
                     pipeline_perturb_id=pipeline_perturb_id,
@@ -315,11 +315,11 @@ def main(force=False) -> None:
     if force:
         dir_dist = pl.Path("dist")
         dir_build = pl.Path("build")
-        
+
         if dir_dist.exists():
             print(f"Force option enabled: Removing {dir_dist}")
             shutil.rmtree(dir_dist)
-            
+
         if dir_build.exists():
             print(f"Force option enabled: Removing {dir_build}")
             shutil.rmtree(dir_build)
@@ -555,7 +555,7 @@ def cli():
     parser = argparse.ArgumentParser(description="Your script description")
     parser.add_argument("-f", "--force", action="store_true", help="Force execution without prompts")
     args = parser.parse_args()
-    
+
     main(force=args.force)
 
 
