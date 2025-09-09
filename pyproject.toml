@@ -14,7 +14,7 @@ dependencies = [
   "voluptuous==0.14.2",  # for cpac config expansion
   "pathvalidate==3.2.0",  # for cpac config expansion
   "yamlordereddictloader==0.4.2",  # for cpac config expansion
-  "setuptools==69.5.1",  # for cpac config expansion
+  "setuptools==78.1.1",  # for cpac config expansion
   "traits==6.3.2"  # for cpac config expansion
 ]
 
