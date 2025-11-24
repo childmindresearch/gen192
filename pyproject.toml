@@ -2,7 +2,7 @@
 authors = [
   {name = "CMI DAIR", email = "dair@childmind.org"}
 ]
-license = "LGPL-2.1"
+license = "LGPL-2.1-only"
 requires-python = ">=3.10"
 name = "gen192"
 version = "0.1.0"
