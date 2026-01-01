@@ -11,11 +11,11 @@ readme = "README.md"
 dependencies = [
   "pyyaml>=6.0.1",
   "nipype==1.10.0",  # for cpac config expansion
-  "voluptuous==0.15.2",  # for cpac config expansion
+  "voluptuous==0.16.0",  # for cpac config expansion
   "pathvalidate==3.3.1",  # for cpac config expansion
   "yamlordereddictloader==0.4.2",  # for cpac config expansion
   "setuptools==80.9.0",  # for cpac config expansion
-  "traits==7.0.2"  # for cpac config expansion
+  "traits==7.1.0"  # for cpac config expansion
 ]
 
 [project.scripts]
